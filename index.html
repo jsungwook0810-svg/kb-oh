@@ -113,31 +113,20 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, doc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // --- 여기에 Firebase에서 복사한 설정을 붙여넣으세요 ---
-        const firebaseConfig = {
-  apiKey: "AIzaSyBR7l4-gU0sqH9vq11MTm7-8HkpyH10PsU",
-  authDomain: "kb-ohda.firebaseapp.com",
-  projectId: "kb-ohda",
-  storageBucket: "kb-ohda.firebasestorage.app",
-  messagingSenderId: "36985771355",
-  appId: "1:36985771355:web:f52c59002f0c8831e9f67e"
-};
-        // ---------------------------------------------
-
-        const CATEGORIES = {
-            general: { label: '일반', price: 10000, color: '#3b82f6' },
-            benefit: { label: '실손급여', price: 4650, color: '#ef4444' },
-            nonBenefit: { label: '실손비급여', price: 9000, color: '#10b981' },
-            genInvest: { label: '일반조사', price: 30000, color: '#f59e0b' },
-            invExemption: { label: '조사면책', price: 60000, color: '#6366f1' },
-            exemption: { label: '면책', price: 10000, color: '#ec4899' }
+        // --- Firebase Config (Global Variable check for environment stability) ---
+        const envConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const firebaseConfig = envConfig || {
+            apiKey: "AIzaSyBR7l4-gU0sqH9vq11MTm7-8HkpyH10PsU",
+            authDomain: "kb-ohda.firebaseapp.com",
+            projectId: "kb-ohda",
+            storageBucket: "kb-ohda.firebasestorage.app",
+            messagingSenderId: "36985771355",
+            appId: "1:36985771355:web:f52c59002f0c8831e9f67e",
         };
-        const THRESHOLD = 5650000;
-        const SOLAR_HOLIDAYS = { '01-01': '신정', '03-01': '삼일절', '05-05': '어린이날', '06-06': '현충일', '08-15': '광복절', '10-03': '개천절', '10-09': '한글날', '12-25': '성탄절' };
-        const LUNAR_HOLIDAYS = { '2024-09-16': '추석', '2024-09-17': '추석', '2024-09-18': '추석', '2025-01-28': '설날', '2025-01-29': '설날', '2025-01-30': '설날', '2025-10-05': '추석', '2025-10-06': '추석', '2025-10-07': '추석' };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kb-ohda';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -150,18 +139,42 @@
         let revenueChart = null;
         let categoryUnifiedChart = null;
 
+        const CATEGORIES = {
+            general: { label: '일반', price: 10000, color: '#3b82f6' },
+            benefit: { label: '실손급여', price: 4650, color: '#ef4444' },
+            nonBenefit: { label: '실손비급여', price: 9000, color: '#10b981' },
+            genInvest: { label: '일반조사', price: 30000, color: '#f59e0b' },
+            invExemption: { label: '조사면책', price: 60000, color: '#6366f1' },
+            exemption: { label: '면책', price: 10000, color: '#ec4899' }
+        };
+        const THRESHOLD = 5650000;
+
+        // Auth Logic (Rule 3)
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                showToast("인증 실패");
+            }
+        };
+
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 startSync();
-            } else {
-                signInAnonymously(auth);
             }
         });
 
+        // Sync Logic (Rule 1: Strict Paths)
         const startSync = () => {
-            const q = query(collection(db, 'users', user.uid, 'records'));
+            if (!user) return;
+            const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'records'));
             onSnapshot(q, (snapshot) => {
                 records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                          .sort((a, b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
@@ -170,10 +183,14 @@
                     renderStats();
                     renderDailyList();
                 }
+            }, (error) => {
+                console.error("Permission error or Sync failure:", error);
+                showToast("접근 권한이 없습니다.");
             });
         };
 
         window.handleRecordSubmit = async () => {
+            if (!user) return;
             const counts = {};
             let recordRevenue = 0;
             let hasValue = false;
@@ -189,25 +206,42 @@
 
             try {
                 if (editingId) {
-                    await updateDoc(doc(db, 'users', user.uid, 'records', editingId), data);
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'records', editingId), data);
                     editingId = null;
                     showToast("수정 완료");
                 } else {
-                    await addDoc(collection(db, 'users', user.uid, 'records'), data);
+                    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'records'), data);
                     showToast("저장 완료");
                 }
                 cancelEdit();
                 clearInputs();
-            } catch (e) { showToast("오류 발생"); }
+            } catch (e) { 
+                console.error("Save error:", e);
+                showToast("오류 발생"); 
+            }
         };
 
         window.deleteRecord = async (id) => {
+            if (!user) return;
             if (confirm("삭제하시겠습니까?")) {
-                await deleteDoc(doc(db, 'users', user.uid, 'records', id));
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'records', id));
                 showToast("삭제됨");
             }
         };
 
+        window.resetData = async () => {
+            if (!user || !confirm("모든 데이터를 초기화하시겠습니까?")) return;
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'records'));
+                const snapshot = await getDocs(q);
+                const batch = writeBatch(db);
+                snapshot.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                showToast("초기화 완료");
+            } catch (e) { showToast("초기화 실패"); }
+        };
+
+        // UI Logic
         window.loadForEdit = (id) => {
             const r = records.find(x => x.id === id);
             editingId = id;
@@ -254,7 +288,7 @@
             }
         }
 
-        function createRecordCard(r, inc = 0) {
+        function createRecordCard(r) {
             const d = document.createElement('div');
             d.className = 'bg-white border p-4 rounded-xl shadow-sm text-left mb-2';
             const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-100 px-1.5 py-0.5 rounded mr-1 text-[9px] font-bold">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
@@ -283,12 +317,21 @@
             const ctx = document.getElementById('categoryUnifiedChart').getContext('2d');
             if (categoryUnifiedChart) categoryUnifiedChart.destroy();
             categoryUnifiedChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(CATEGORIES).map(k => CATEGORIES[k].label), datasets: [{ data: Object.keys(CATEGORIES).map(k => sums[k]), backgroundColor: Object.keys(CATEGORIES).map(k => CATEGORIES[k].color) }] }, options: { cutout: '65%' } });
+            
+            const tableContainer = document.getElementById('categoryStatsTable');
+            tableContainer.innerHTML = Object.keys(CATEGORIES).map(k => {
+                const count = sums[k];
+                if (count === 0) return '';
+                const rev = count * CATEGORIES[k].price;
+                return `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${CATEGORIES[k].color}"></div><span class="text-xs font-bold text-slate-600">${CATEGORIES[k].label}</span></div><div class="flex items-center gap-4 text-right"><div><div class="text-[9px] text-slate-400 uppercase">건수</div><div class="text-xs font-bold text-slate-800">${count}건</div></div><div class="w-20"><div class="text-[9px] text-slate-400 uppercase">매출</div><div class="text-xs font-bold text-slate-800">${rev.toLocaleString()}원</div></div></div></div>`;
+            }).join('');
         };
 
         window.renderDailyList = () => {
             const months = [...new Set(records.map(r => r.date.substring(0, 7)))].sort().reverse();
+            if (months.length === 0) return;
             const cur = document.getElementById('dailyMonthSelect').value || months[0];
-            document.getElementById('dailyMonthSelect').innerHTML = months.map(m => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
+            document.getElementById('dailyMonthSelect').innerHTML = months.map(m => `<option value="${m}" ${m === currentSelected ? 'selected' : ''}>${m}</option>`).join('');
 
             const dayMap = {};
             records.filter(r => r.date.startsWith(cur)).forEach(r => {
@@ -306,6 +349,10 @@
                 const rev = dayMap[i] || 0;
                 grid.innerHTML += `<div class="calendar-day ${rev>0?'has-revenue':''}"> <span class="day-num">${i}</span> <span class="day-revenue">${rev>0?rev.toLocaleString():''}</span> </div>`;
             }
+            
+            const detailList = document.getElementById('dailyDetailList');
+            detailList.innerHTML = '';
+            records.filter(r => r.date.startsWith(cur)).forEach(r => detailList.appendChild(createRecordCard(r)));
         };
 
         window.switchView = (v) => {
@@ -324,8 +371,11 @@
         };
 
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2000); }
+        
         document.getElementById('inputDate').valueAsDate = new Date();
         document.getElementById('categoryInputs').innerHTML = Object.keys(CATEGORIES).map(k => `<div class="space-y-1"><label class="block text-[11px] font-bold text-slate-400">${CATEGORIES[k].label} (${CATEGORIES[k].price})</label><input type="number" id="input_${k}" placeholder="0" class="w-full bg-slate-50 border p-3 rounded-lg text-sm font-bold"></div>`).join('');
+        
+        initAuth();
     </script>
 </body>
 </html>
