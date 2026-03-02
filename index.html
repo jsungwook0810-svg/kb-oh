@@ -168,6 +168,18 @@
             return null;
         }
 
+        /**
+         * 오늘 날짜를 YYYY-MM-DD 형식으로 가져와서 입력창에 설정
+         */
+        function setTodayDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+            document.getElementById('inputDate').value = dateString;
+        }
+
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
@@ -180,14 +192,12 @@
 
         const startSync = () => {
             if (!user) return;
-            // RULE 1: Strict Paths 적용
             const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'records'));
             onSnapshot(q, (snapshot) => {
                 records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                          .sort((a, b) => b.date.localeCompare(a.date) || (b.timestamp || 0) - (a.timestamp || 0));
                 
                 updateCalculations();
-                // 통계 화면이 열려있다면 즉시 업데이트
                 if (!document.getElementById('view-stats').classList.contains('hidden-view')) {
                     renderStats();
                     renderDailyList();
@@ -255,7 +265,10 @@
             clearInputs();
         };
 
-        function clearInputs() { Object.keys(CATEGORIES).forEach(k => document.getElementById(`input_${k}`).value = ''); }
+        function clearInputs() { 
+            Object.keys(CATEGORIES).forEach(k => document.getElementById(`input_${k}`).value = '');
+            setTodayDate(); // 저장 후 날짜를 다시 오늘로 세팅 (날짜가 바뀌었을 가능성 대비)
+        }
 
         function updateCalculations() {
             const currentMonth = new Date().toISOString().substring(0, 7);
@@ -327,7 +340,6 @@
             Object.keys(CATEGORIES).forEach(k => { sums[k] = 0; catRev[k] = 0; });
             filtered.forEach(r => Object.keys(r.counts).forEach(k => { sums[k] += r.counts[k]; catRev[k] += r.counts[k] * CATEGORIES[k].price; }));
 
-            // 항목별 도넛 차트
             const ctx2 = document.getElementById('categoryUnifiedChart').getContext('2d');
             if (categoryUnifiedChart) categoryUnifiedChart.destroy();
             categoryUnifiedChart = new Chart(ctx2, { 
@@ -343,16 +355,14 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } }, cutout: '65%' } 
             });
 
-            // 항목별 테이블 상세
             const table = document.getElementById('categoryStatsTable');
             table.innerHTML = Object.keys(CATEGORIES).map(k => {
                 const c = sums[k]; if (c === 0) return '';
                 return `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${CATEGORIES[k].color}"></div><span class="text-xs font-bold text-slate-600">${CATEGORIES[k].label}</span></div><div class="flex items-center gap-4 text-right"><div><div class="text-[9px] text-slate-400">건수</div><div class="text-xs font-bold text-slate-800">${c}건</div></div><div class="w-20"><div class="text-[9px] text-slate-400">매출</div><div class="text-xs font-bold text-slate-800">${catRev[k].toLocaleString()}원</div></div></div></div>`;
             }).join('');
 
-            // 월별 매출 바 차트
             const monthlyTotals = {};
-            months.slice().reverse().forEach(m => monthlyTotals[m] = records.filter(r => r.date.startsWith(m)).reduce((a, b) => a + b.revenue, 0));
+            months.slice().reverse().forEach(m => monthlyTotals[m] = records.filter(r => r.date.startsWith(m)).reduce((acc, curr) => acc + curr.revenue, 0));
             const ctx1 = document.getElementById('revenueChart').getContext('2d');
             if (revenueChart) revenueChart.destroy();
             revenueChart = new Chart(ctx1, { type: 'bar', data: { labels: Object.keys(monthlyTotals).map(m => m.split('-')[1] + '월'), datasets: [{ label: '매출', data: Object.values(monthlyTotals), backgroundColor: '#4f46e5', borderRadius: 4, barThickness: 16 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } } });
@@ -369,7 +379,6 @@
             const dayIncMap = {};
             let cumulative = 0;
             
-            // 시간 순서대로 정렬하여 인센티브 누적 계산 (일별 내역은 최신순으로 보여주기 위함)
             const monthRecords = records.filter(r => r.date.startsWith(curMonth)).sort((a, b) => a.date.localeCompare(b.date) || (a.timestamp || 0) - (b.timestamp || 0));
             const detailList = document.getElementById('dailyDetailList');
             detailList.innerHTML = '';
@@ -390,7 +399,6 @@
             });
             cardElements.forEach(el => detailList.appendChild(el));
 
-            // 달력 그리기
             const [y, m] = curMonth.split('-').map(Number);
             const first = new Date(y, m-1, 1).getDay();
             const last = new Date(y, m, 0).getDate();
@@ -406,16 +414,8 @@
                 const holiday = getHoliday(y, m, i);
                 const dayOfWeek = new Date(y, m-1, i).getDay();
                 const isToday = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}` === todayKey;
-                
                 let dayColorClass = (dayOfWeek === 0 || holiday) ? 'is-sun' : (dayOfWeek === 6 ? 'is-sat' : '');
-                
-                grid.innerHTML += `
-                    <div class="calendar-day ${rev > 0 ? 'has-revenue' : ''} ${isToday ? 'is-today' : ''}">
-                        <span class="day-num ${dayColorClass}">${i}</span>
-                        ${holiday ? `<span class="holiday-name">${holiday}</span>` : ''}
-                        <span class="day-revenue">${rev > 0 ? rev.toLocaleString() : ''}</span>
-                        ${inc > 0 ? `<span class="day-incentive-cal">+${Math.floor(inc).toLocaleString()}</span>` : ''}
-                    </div>`;
+                grid.innerHTML += `<div class="calendar-day ${rev > 0 ? 'has-revenue' : ''} ${isToday ? 'is-today' : ''}"><span class="day-num ${dayColorClass}">${i}</span>${holiday ? `<span class="holiday-name">${holiday}</span>` : ''}<span class="day-revenue">${rev > 0 ? rev.toLocaleString() : ''}</span>${inc > 0 ? `<span class="day-incentive-cal">+${Math.floor(inc).toLocaleString()}</span>` : ''}</div>`;
             }
         };
 
@@ -449,8 +449,8 @@
 
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2000); }
         
-        // 초기 입력 폼 렌더링
-        document.getElementById('inputDate').valueAsDate = new Date();
+        // 초기 설정
+        setTodayDate();
         document.getElementById('categoryInputs').innerHTML = Object.keys(CATEGORIES).map(k => `
             <div class="space-y-1">
                 <label class="block text-[11px] font-bold text-slate-400 ml-1">
