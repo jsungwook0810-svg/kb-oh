@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매출 및 인센티브 산정 도구</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .hidden-view { display: none; }
+        .tab-active { color: #4f46e5; font-weight: 700; border-bottom: 2px solid #4f46e5; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 0.75rem; overflow: hidden; }
+        .calendar-day { background-color: #fff; min-height: 72px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .calendar-header-day { background-color: #f8fafc; padding: 8px 0; text-align: center; font-size: 10px; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+        .day-num { font-size: 10px; font-weight: 600; margin-bottom: 2px; }
+        .day-revenue { font-size: 8px; font-weight: 800; color: #4f46e5; text-align: center; word-break: break-all; line-height: 1.2; letter-spacing: -0.02em; }
+        .day-incentive-cal { font-size: 7px; font-weight: 800; color: #10b981; text-align: center; margin-top: 1px; line-height: 1; }
+        .holiday-name { font-size: 7px; color: #f43f5e; transform: scale(0.9); line-height: 1; text-align: center; margin-bottom: 2px; }
+        .has-revenue { background-color: #f5f3ff; }
+        .is-sun, .is-holiday { color: #f43f5e !important; }
+        .is-sat { color: #3b82f6 !important; }
+        .is-today { outline: 2px solid #4f46e5; outline-offset: -2px; z-index: 10; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 pb-24">
+
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[100] flex flex-col items-center justify-center transition-opacity duration-300">
+        <div class="loader mb-4"></div>
+        <p class="text-sm font-bold text-slate-600">서버 연결 중...</p>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex justify-around items-center h-16 shadow-lg">
+        <button onclick="switchView('input')" id="nav-input" class="flex flex-col items-center gap-1 text-indigo-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            <span class="text-[10px] font-bold">실적 입력</span>
+        </button>
+        <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center gap-1 text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            <span class="text-[10px] font-bold">통계 및 내역</span>
+        </button>
+    </nav>
+
+    <div class="max-w-md mx-auto px-4 py-8">
+        <div id="view-input">
+            <header class="mb-8 text-center">
+                <h1 class="text-2xl font-bold text-slate-800 font-serif tracking-tight">Personal Performance</h1>
+                <div id="syncStatus" class="inline-block mt-2 px-2 py-0.5 bg-emerald-50 text-[9px] text-emerald-600 rounded-full font-bold">Cloud Connected</div>
+            </header>
+
+            <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <span class="text-slate-400 text-sm font-medium">이번 달 인센티브 (50%)</span>
+                    <button onclick="resetData()" class="text-[10px] bg-white/10 px-2 py-1 rounded">전체 초기화</button>
+                </div>
+                <div class="text-4xl font-bold mb-4 relative z-10" id="totalIncentive">0원</div>
+                <div class="space-y-2 border-t border-white/10 pt-4 relative z-10">
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">누적 매출액</span><span class="font-semibold" id="totalRevenueDisplay">0원</span></div>
+                    <div class="flex justify-between text-sm text-[11px]"><span class="text-slate-400">기준 차감액</span><span>5,650,000원</span></div>
+                </div>
+            </div>
+
+            <div id="inputFormContainer" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-8 transition-all">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 id="formTitle" class="text-sm font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> 실적 입력</h2>
+                    <input type="date" id="inputDate" class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-6" id="categoryInputs"></div>
+                <div class="flex gap-2">
+                    <button id="cancelEditBtn" onclick="cancelEdit()" class="hidden flex-1 bg-slate-200 text-slate-600 font-bold py-4 rounded-xl">취소</button>
+                    <button id="submitBtn" onclick="handleRecordSubmit()" class="flex-[2] bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 active:scale-95 transition shadow-lg shadow-indigo-100">실적 저장하기</button>
+                </div>
+            </div>
+            
+            <div id="historySection">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold text-slate-800">최근 기록</h2>
+                    <span id="recordCount" class="text-[11px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">0건</span>
+                </div>
+                <div id="historyList" class="space-y-3 pb-4 text-center"></div>
+            </div>
+        </div>
+
+        <div id="view-stats" class="hidden-view">
+            <header class="mb-6"><h1 class="text-2xl font-bold text-slate-800">통계 및 내역</h1></header>
+            <div class="flex border-b border-slate-200 mb-6">
+                <button onclick="switchStatsTab('monthly')" id="tab-monthly" class="flex-1 py-3 text-sm font-bold tab-active">월별 통계</button>
+                <button onclick="switchStatsTab('daily')" id="tab-daily" class="flex-1 py-3 text-sm font-bold text-slate-400">일별 내역</button>
+            </div>
+            <div id="stats-monthly-content" class="space-y-6">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h2 class="text-sm font-bold text-slate-800 mb-4 text-center">월별 매출 현황</h2><div class="h-48 w-full"><canvas id="revenueChart"></canvas></div></div>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h2 class="text-sm font-bold text-slate-800 mb-4">월별 정산 내역</h2><div id="monthlyIncentiveList" class="space-y-3"></div></div>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-sm font-bold text-slate-800">항목별 상세</h2><select id="statsMonthSelect" onchange="renderStats()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded outline-none border-none"></select></div>
+                    <div class="space-y-6"><div class="h-64 flex justify-center"><canvas id="categoryUnifiedChart"></canvas></div><div id="categoryStatsTable" class="mt-6 border-t border-slate-100 pt-4 space-y-3"></div></div>
+                </div>
+            </div>
+            <div id="stats-daily-content" class="hidden-view">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-6">
+                    <div class="flex justify-between items-center mb-4"><h2 class="text-sm font-bold text-slate-800">일별 매출 달력</h2><select id="dailyMonthSelect" onchange="renderDailyList()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded outline-none border-none"></select></div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+                <h2 class="text-sm font-bold text-slate-800 mb-4 px-1">상세 기록</h2><div id="dailyDetailList" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full text-sm font-medium opacity-0 transition-all duration-300 shadow-xl z-50 pointer-events-none">데이터 전송 중...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        // --- 여기에 Firebase에서 복사한 설정을 붙여넣으세요 ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyBR7l4-gU0sqH9vq11MTm7-8HkpyH10PsU",
+  authDomain: "kb-ohda.firebaseapp.com",
+  projectId: "kb-ohda",
+  storageBucket: "kb-ohda.firebasestorage.app",
+  messagingSenderId: "36985771355",
+  appId: "1:36985771355:web:f52c59002f0c8831e9f67e"
+};
+        // ---------------------------------------------
+
+        const CATEGORIES = {
+            general: { label: '일반', price: 10000, color: '#3b82f6' },
+            benefit: { label: '실손급여', price: 4650, color: '#ef4444' },
+            nonBenefit: { label: '실손비급여', price: 9000, color: '#10b981' },
+            genInvest: { label: '일반조사', price: 30000, color: '#f59e0b' },
+            invExemption: { label: '조사면책', price: 60000, color: '#6366f1' },
+            exemption: { label: '면책', price: 10000, color: '#ec4899' }
+        };
+        const THRESHOLD = 5650000;
+        const SOLAR_HOLIDAYS = { '01-01': '신정', '03-01': '삼일절', '05-05': '어린이날', '06-06': '현충일', '08-15': '광복절', '10-03': '개천절', '10-09': '한글날', '12-25': '성탄절' };
+        const LUNAR_HOLIDAYS = { '2024-09-16': '추석', '2024-09-17': '추석', '2024-09-18': '추석', '2025-01-28': '설날', '2025-01-29': '설날', '2025-01-30': '설날', '2025-10-05': '추석', '2025-10-06': '추석', '2025-10-07': '추석' };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let records = [];
+        let user = null;
+        let editingId = null;
+        let isRecentExpanded = false;
+        let revenueChart = null;
+        let categoryUnifiedChart = null;
+
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (u) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                startSync();
+            } else {
+                signInAnonymously(auth);
+            }
+        });
+
+        const startSync = () => {
+            const q = query(collection(db, 'users', user.uid, 'records'));
+            onSnapshot(q, (snapshot) => {
+                records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                         .sort((a, b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
+                updateCalculations();
+                if (!document.getElementById('view-stats').classList.contains('hidden-view')) {
+                    renderStats();
+                    renderDailyList();
+                }
+            });
+        };
+
+        window.handleRecordSubmit = async () => {
+            const counts = {};
+            let recordRevenue = 0;
+            let hasValue = false;
+            Object.keys(CATEGORIES).forEach(key => {
+                const val = parseInt(document.getElementById(`input_${key}`).value) || 0;
+                counts[key] = val;
+                if (val > 0) hasValue = true;
+                recordRevenue += val * CATEGORIES[key].price;
+            });
+            if (!hasValue) { showToast("건수를 입력하세요."); return; }
+            const date = document.getElementById('inputDate').value;
+            const data = { date, counts, revenue: recordRevenue, timestamp: Date.now() };
+
+            try {
+                if (editingId) {
+                    await updateDoc(doc(db, 'users', user.uid, 'records', editingId), data);
+                    editingId = null;
+                    showToast("수정 완료");
+                } else {
+                    await addDoc(collection(db, 'users', user.uid, 'records'), data);
+                    showToast("저장 완료");
+                }
+                cancelEdit();
+                clearInputs();
+            } catch (e) { showToast("오류 발생"); }
+        };
+
+        window.deleteRecord = async (id) => {
+            if (confirm("삭제하시겠습니까?")) {
+                await deleteDoc(doc(db, 'users', user.uid, 'records', id));
+                showToast("삭제됨");
+            }
+        };
+
+        window.loadForEdit = (id) => {
+            const r = records.find(x => x.id === id);
+            editingId = id;
+            document.getElementById('inputDate').value = r.date;
+            Object.keys(CATEGORIES).forEach(k => document.getElementById(`input_${k}`).value = r.counts[k] || '');
+            document.getElementById('formTitle').innerHTML = "🛠 기록 수정 중";
+            document.getElementById('submitBtn').textContent = "수정 완료";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            window.scrollTo(0, 0);
+        };
+
+        window.cancelEdit = () => {
+            editingId = null;
+            document.getElementById('formTitle').innerHTML = "입력";
+            document.getElementById('submitBtn').textContent = "실적 저장하기";
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            clearInputs();
+        };
+
+        function clearInputs() { Object.keys(CATEGORIES).forEach(k => document.getElementById(`input_${k}`).value = ''); }
+
+        function updateCalculations() {
+            const currentMonth = new Date().toISOString().substring(0, 7);
+            const thisMonthRecords = records.filter(r => r.date.startsWith(currentMonth));
+            const totalRevenue = thisMonthRecords.reduce((a, b) => a + b.revenue, 0);
+            const surplus = totalRevenue - THRESHOLD;
+            const incentive = surplus > 0 ? surplus * 0.5 : 0;
+
+            document.getElementById('totalRevenueDisplay').textContent = totalRevenue.toLocaleString() + '원';
+            document.getElementById('totalIncentive').textContent = Math.floor(incentive).toLocaleString() + '원';
+            document.getElementById('recordCount').textContent = records.length + '건';
+
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            const limit = isRecentExpanded ? 14 : 3;
+            records.slice(0, limit).forEach(r => historyList.appendChild(createRecordCard(r)));
+
+            if (!isRecentExpanded && records.length > 3) {
+                const b = document.createElement('button');
+                b.className = "w-full py-3 bg-slate-100 rounded-xl text-xs font-bold";
+                b.textContent = "더보기";
+                b.onclick = () => { isRecentExpanded = true; updateCalculations(); };
+                historyList.appendChild(b);
+            }
+        }
+
+        function createRecordCard(r, inc = 0) {
+            const d = document.createElement('div');
+            d.className = 'bg-white border p-4 rounded-xl shadow-sm text-left mb-2';
+            const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-100 px-1.5 py-0.5 rounded mr-1 text-[9px] font-bold">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
+            d.innerHTML = `<div class="flex justify-between"><div><div class="text-[10px] text-slate-400 font-bold">${r.date}</div><div class="flex flex-wrap mt-1">${breakdown}</div></div><div class="flex gap-2"><button onclick="loadForEdit('${r.id}')" class="text-slate-300">✎</button><button onclick="deleteRecord('${r.id}')" class="text-slate-300">✕</button></div></div><div class="mt-2 pt-2 border-t flex justify-between"><span class="text-xs text-slate-400">합계</span><span class="text-sm font-bold">${r.revenue.toLocaleString()}원</span></div>`;
+            return d;
+        }
+
+        window.renderStats = () => {
+            const months = [...new Set(records.map(r => r.date.substring(0, 7)))].sort().reverse();
+            if (months.length === 0) return;
+            const sel = document.getElementById('statsMonthSelect');
+            const cur = sel.value || months[0];
+            sel.innerHTML = months.map(m => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
+
+            const list = document.getElementById('monthlyIncentiveList');
+            list.innerHTML = months.map(m => {
+                const rev = records.filter(r => r.date.startsWith(m)).reduce((a, b) => a + b.revenue, 0);
+                const inc = rev > THRESHOLD ? (rev - THRESHOLD) * 0.5 : 0;
+                return `<div class="flex justify-between p-3 bg-slate-50 rounded-xl text-xs"><span>${m}</span><span class="font-bold text-indigo-600">${Math.floor(inc).toLocaleString()}원</span></div>`;
+            }).join('');
+
+            const filtered = records.filter(r => r.date.startsWith(cur));
+            const sums = {}; Object.keys(CATEGORIES).forEach(k => sums[k] = 0);
+            filtered.forEach(r => Object.keys(r.counts).forEach(k => sums[k] += r.counts[k]));
+
+            const ctx = document.getElementById('categoryUnifiedChart').getContext('2d');
+            if (categoryUnifiedChart) categoryUnifiedChart.destroy();
+            categoryUnifiedChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(CATEGORIES).map(k => CATEGORIES[k].label), datasets: [{ data: Object.keys(CATEGORIES).map(k => sums[k]), backgroundColor: Object.keys(CATEGORIES).map(k => CATEGORIES[k].color) }] }, options: { cutout: '65%' } });
+        };
+
+        window.renderDailyList = () => {
+            const months = [...new Set(records.map(r => r.date.substring(0, 7)))].sort().reverse();
+            const cur = document.getElementById('dailyMonthSelect').value || months[0];
+            document.getElementById('dailyMonthSelect').innerHTML = months.map(m => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
+
+            const dayMap = {};
+            records.filter(r => r.date.startsWith(cur)).forEach(r => {
+                const d = parseInt(r.date.split('-')[2]);
+                dayMap[d] = (dayMap[d] || 0) + r.revenue;
+            });
+
+            const [y, m] = cur.split('-').map(Number);
+            const first = new Date(y, m-1, 1).getDay();
+            const last = new Date(y, m, 0).getDate();
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = ['일','월','화','수','목','금','토'].map(d => `<div class="calendar-header-day">${d}</div>`).join('');
+            for(let i=0; i<first; i++) grid.innerHTML += `<div class="calendar-day bg-slate-50"></div>`;
+            for(let i=1; i<=last; i++) {
+                const rev = dayMap[i] || 0;
+                grid.innerHTML += `<div class="calendar-day ${rev>0?'has-revenue':''}"> <span class="day-num">${i}</span> <span class="day-revenue">${rev>0?rev.toLocaleString():''}</span> </div>`;
+            }
+        };
+
+        window.switchView = (v) => {
+            document.getElementById('view-input').classList.toggle('hidden-view', v !== 'input');
+            document.getElementById('view-stats').classList.toggle('hidden-view', v !== 'stats');
+            document.getElementById('nav-input').className = `flex flex-col items-center gap-1 ${v === 'input' ? 'text-indigo-600' : 'text-slate-400'}`;
+            document.getElementById('nav-stats').className = `flex flex-col items-center gap-1 ${v === 'stats' ? 'text-indigo-600' : 'text-slate-400'}`;
+            if (v === 'stats') { renderStats(); renderDailyList(); }
+        };
+
+        window.switchStatsTab = (t) => {
+            document.getElementById('stats-monthly-content').classList.toggle('hidden-view', t !== 'monthly');
+            document.getElementById('stats-daily-content').classList.toggle('hidden-view', t !== 'daily');
+            document.getElementById('tab-monthly').className = t === 'monthly' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+            document.getElementById('tab-daily').className = t === 'daily' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+        };
+
+        function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2000); }
+        document.getElementById('inputDate').valueAsDate = new Date();
+        document.getElementById('categoryInputs').innerHTML = Object.keys(CATEGORIES).map(k => `<div class="space-y-1"><label class="block text-[11px] font-bold text-slate-400">${CATEGORIES[k].label} (${CATEGORIES[k].price})</label><input type="number" id="input_${k}" placeholder="0" class="w-full bg-slate-50 border p-3 rounded-lg text-sm font-bold"></div>`).join('');
+    </script>
+</body>
+</html>
