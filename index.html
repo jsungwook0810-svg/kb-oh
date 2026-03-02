@@ -31,7 +31,7 @@
 
     <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[100] flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="loader mb-4"></div>
-        <p class="text-sm font-bold text-slate-600">서버 연결 중...</p>
+        <p class="text-sm font-bold text-slate-600">서버 연결 및 데이터 동기화 중...</p>
     </div>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex justify-around items-center h-16 shadow-lg">
@@ -49,7 +49,7 @@
         <div id="view-input">
             <header class="mb-8 text-center">
                 <h1 class="text-2xl font-bold text-slate-800 font-serif tracking-tight">Personal Performance</h1>
-                <div id="syncStatus" class="inline-block mt-2 px-2 py-0.5 bg-emerald-50 text-[9px] text-emerald-600 rounded-full font-bold">Cloud Connected</div>
+                <div id="syncStatus" class="inline-block mt-2 px-2 py-0.5 bg-emerald-50 text-[9px] text-emerald-600 rounded-full font-bold">Cloud Synced</div>
             </header>
 
             <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
@@ -59,7 +59,7 @@
                 </div>
                 <div class="text-4xl font-bold mb-4 relative z-10" id="totalIncentive">0원</div>
                 <div class="space-y-2 border-t border-white/10 pt-4 relative z-10">
-                    <div class="flex justify-between text-sm"><span class="text-slate-400">누적 매출액</span><span class="font-semibold" id="totalRevenueDisplay">0원</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">이번 달 누적 매출</span><span class="font-semibold" id="totalRevenueDisplay">0원</span></div>
                     <div class="flex justify-between text-sm text-[11px]"><span class="text-slate-400">기준 차감액</span><span>5,650,000원</span></div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
             <div id="inputFormContainer" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-8 transition-all">
                 <div class="flex items-center justify-between mb-5">
                     <h2 id="formTitle" class="text-sm font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> 실적 입력</h2>
-                    <input type="date" id="inputDate" class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md outline-none">
+                    <input type="date" id="inputDate" class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md outline-none border-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-6" id="categoryInputs"></div>
                 <div class="flex gap-2">
@@ -78,33 +78,42 @@
             
             <div id="historySection">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-sm font-bold text-slate-800">최근 기록</h2>
+                    <h2 class="text-sm font-bold text-slate-800">최근 입력 내역</h2>
                     <span id="recordCount" class="text-[11px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">0건</span>
                 </div>
-                <div id="historyList" class="space-y-3 pb-4 text-center"></div>
+                <div id="historyList" class="space-y-3 pb-4"></div>
             </div>
         </div>
 
         <div id="view-stats" class="hidden-view">
-            <header class="mb-6"><h1 class="text-2xl font-bold text-slate-800">통계 및 내역</h1></header>
+            <header class="mb-6"><h1 class="text-2xl font-bold text-slate-800 font-serif">통계 및 내역</h1></header>
             <div class="flex border-b border-slate-200 mb-6">
                 <button onclick="switchStatsTab('monthly')" id="tab-monthly" class="flex-1 py-3 text-sm font-bold tab-active">월별 통계</button>
                 <button onclick="switchStatsTab('daily')" id="tab-daily" class="flex-1 py-3 text-sm font-bold text-slate-400">일별 내역</button>
             </div>
+            
+            <!-- 월별 통계 탭 -->
             <div id="stats-monthly-content" class="space-y-6">
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h2 class="text-sm font-bold text-slate-800 mb-4 text-center">월별 매출 현황</h2><div class="h-48 w-full"><canvas id="revenueChart"></canvas></div></div>
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h2 class="text-sm font-bold text-slate-800 mb-4">월별 정산 내역</h2><div id="monthlyIncentiveList" class="space-y-3"></div></div>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h2 class="text-sm font-bold text-slate-800 mb-4">월별 정산 리포트</h2><div id="monthlyIncentiveList" class="space-y-3"></div></div>
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-6"><h2 class="text-sm font-bold text-slate-800">항목별 상세</h2><select id="statsMonthSelect" onchange="renderStats()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded outline-none border-none"></select></div>
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-sm font-bold text-slate-800">항목별 상세 분석</h2><select id="statsMonthSelect" onchange="renderStats()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded outline-none border-none"></select></div>
                     <div class="space-y-6"><div class="h-64 flex justify-center"><canvas id="categoryUnifiedChart"></canvas></div><div id="categoryStatsTable" class="mt-6 border-t border-slate-100 pt-4 space-y-3"></div></div>
                 </div>
             </div>
+
+            <!-- 일별 내역 탭 -->
             <div id="stats-daily-content" class="hidden-view">
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-6">
                     <div class="flex justify-between items-center mb-4"><h2 class="text-sm font-bold text-slate-800">일별 매출 달력</h2><select id="dailyMonthSelect" onchange="renderDailyList()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded outline-none border-none"></select></div>
                     <div class="calendar-grid" id="calendarGrid"></div>
+                    <div class="mt-2 text-[9px] text-slate-400 text-right font-medium flex justify-between">
+                        <span>* 빨간색: 공휴일/일요일, 파란색: 토요일</span>
+                        <span class="text-emerald-500">* 초록색: 인센티브 발생분</span>
+                    </div>
                 </div>
-                <h2 class="text-sm font-bold text-slate-800 mb-4 px-1">상세 기록</h2><div id="dailyDetailList" class="space-y-3"></div>
+                <h2 class="text-sm font-bold text-slate-800 mb-4 px-1 tracking-tight">상세 기록 리스트</h2>
+                <div id="dailyDetailList" class="space-y-3"></div>
             </div>
         </div>
     </div>
@@ -113,20 +122,31 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, doc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // --- Firebase Config (Global Variable check for environment stability) ---
-        const envConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const firebaseConfig = envConfig || {
+        // --- Firebase Config (반드시 본인의 정보로 채워져 있는지 확인하세요) ---
+        const firebaseConfig = {
             apiKey: "AIzaSyBR7l4-gU0sqH9vq11MTm7-8HkpyH10PsU",
             authDomain: "kb-ohda.firebaseapp.com",
             projectId: "kb-ohda",
             storageBucket: "kb-ohda.firebasestorage.app",
             messagingSenderId: "36985771355",
-            appId: "1:36985771355:web:f52c59002f0c8831e9f67e",
+            appId: "1:36985771355:web:f52c59002f0c8831e9f67e"
         };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kb-ohda';
+        const appId = "kb-ohda"; // 리포지토리명 혹은 프로젝트명 고유 ID
+
+        const CATEGORIES = {
+            general: { label: '일반', price: 10000, color: '#3b82f6' },
+            benefit: { label: '실손급여', price: 4650, color: '#ef4444' },
+            nonBenefit: { label: '실손비급여', price: 9000, color: '#10b981' },
+            genInvest: { label: '일반조사', price: 30000, color: '#f59e0b' },
+            invExemption: { label: '조사면책', price: 60000, color: '#6366f1' },
+            exemption: { label: '면책', price: 10000, color: '#ec4899' }
+        };
+        const THRESHOLD = 5650000;
+        const SOLAR_HOLIDAYS = { '01-01': '신정', '03-01': '삼일절', '05-05': '어린이날', '06-06': '현충일', '08-15': '광복절', '10-03': '개천절', '10-09': '한글날', '12-25': '성탄절' };
+        const LUNAR_HOLIDAYS = { '2024-09-16': '추석', '2024-09-17': '추석', '2024-09-18': '추석', '2025-01-28': '설날', '2025-01-29': '설날', '2025-01-30': '설날', '2025-10-05': '추석', '2025-10-06': '추석', '2025-10-07': '추석' };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -139,53 +159,42 @@
         let revenueChart = null;
         let categoryUnifiedChart = null;
 
-        const CATEGORIES = {
-            general: { label: '일반', price: 10000, color: '#3b82f6' },
-            benefit: { label: '실손급여', price: 4650, color: '#ef4444' },
-            nonBenefit: { label: '실손비급여', price: 9000, color: '#10b981' },
-            genInvest: { label: '일반조사', price: 30000, color: '#f59e0b' },
-            invExemption: { label: '조사면책', price: 60000, color: '#6366f1' },
-            exemption: { label: '면책', price: 10000, color: '#ec4899' }
-        };
-        const THRESHOLD = 5650000;
-
-        // Auth Logic (Rule 3)
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth error:", error);
-                showToast("인증 실패");
-            }
-        };
+        // Holiday Helper
+        function getHoliday(year, month, day) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const solarKey = dateStr.substring(5);
+            if (SOLAR_HOLIDAYS[solarKey]) return SOLAR_HOLIDAYS[solarKey];
+            if (LUNAR_HOLIDAYS[dateStr]) return LUNAR_HOLIDAYS[dateStr];
+            return null;
+        }
 
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (u) {
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 startSync();
+            } else {
+                signInAnonymously(auth);
             }
         });
 
-        // Sync Logic (Rule 1: Strict Paths)
         const startSync = () => {
             if (!user) return;
+            // RULE 1: Strict Paths 적용
             const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'records'));
             onSnapshot(q, (snapshot) => {
                 records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                         .sort((a, b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
+                         .sort((a, b) => b.date.localeCompare(a.date) || (b.timestamp || 0) - (a.timestamp || 0));
+                
                 updateCalculations();
+                // 통계 화면이 열려있다면 즉시 업데이트
                 if (!document.getElementById('view-stats').classList.contains('hidden-view')) {
                     renderStats();
                     renderDailyList();
                 }
-            }, (error) => {
-                console.error("Permission error or Sync failure:", error);
-                showToast("접근 권한이 없습니다.");
+            }, (err) => {
+                console.error("Firestore sync error:", err);
+                showToast("데이터 권한 오류 발생");
             });
         };
 
@@ -200,7 +209,7 @@
                 if (val > 0) hasValue = true;
                 recordRevenue += val * CATEGORIES[key].price;
             });
-            if (!hasValue) { showToast("건수를 입력하세요."); return; }
+            if (!hasValue) { showToast("입력된 건수가 없습니다."); return; }
             const date = document.getElementById('inputDate').value;
             const data = { date, counts, revenue: recordRevenue, timestamp: Date.now() };
 
@@ -215,35 +224,20 @@
                 }
                 cancelEdit();
                 clearInputs();
-            } catch (e) { 
-                console.error("Save error:", e);
-                showToast("오류 발생"); 
-            }
+            } catch (e) { showToast("저장 중 오류 발생"); }
         };
 
         window.deleteRecord = async (id) => {
-            if (!user) return;
+            if (!user || !id) return;
             if (confirm("삭제하시겠습니까?")) {
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'records', id));
                 showToast("삭제됨");
             }
         };
 
-        window.resetData = async () => {
-            if (!user || !confirm("모든 데이터를 초기화하시겠습니까?")) return;
-            try {
-                const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'records'));
-                const snapshot = await getDocs(q);
-                const batch = writeBatch(db);
-                snapshot.docs.forEach(d => batch.delete(d.ref));
-                await batch.commit();
-                showToast("초기화 완료");
-            } catch (e) { showToast("초기화 실패"); }
-        };
-
-        // UI Logic
         window.loadForEdit = (id) => {
             const r = records.find(x => x.id === id);
+            if (!r) return;
             editingId = id;
             document.getElementById('inputDate').value = r.date;
             Object.keys(CATEGORIES).forEach(k => document.getElementById(`input_${k}`).value = r.counts[k] || '');
@@ -276,83 +270,153 @@
 
             const historyList = document.getElementById('historyList');
             historyList.innerHTML = '';
+            
+            if (records.length === 0) {
+                historyList.innerHTML = '<p class="text-slate-400 text-sm py-10">내역이 없습니다.</p>';
+                return;
+            }
+
             const limit = isRecentExpanded ? 14 : 3;
             records.slice(0, limit).forEach(r => historyList.appendChild(createRecordCard(r)));
 
             if (!isRecentExpanded && records.length > 3) {
                 const b = document.createElement('button');
-                b.className = "w-full py-3 bg-slate-100 rounded-xl text-xs font-bold";
-                b.textContent = "더보기";
+                b.className = "w-full py-4 bg-slate-100 rounded-xl text-xs font-bold text-slate-500 mt-2 hover:bg-slate-200 transition";
+                b.textContent = "최근 기록 더보기";
                 b.onclick = () => { isRecentExpanded = true; updateCalculations(); };
                 historyList.appendChild(b);
             }
         }
 
-        function createRecordCard(r) {
+        function createRecordCard(r, inc = 0) {
             const d = document.createElement('div');
-            d.className = 'bg-white border p-4 rounded-xl shadow-sm text-left mb-2';
-            const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-100 px-1.5 py-0.5 rounded mr-1 text-[9px] font-bold">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
-            d.innerHTML = `<div class="flex justify-between"><div><div class="text-[10px] text-slate-400 font-bold">${r.date}</div><div class="flex flex-wrap mt-1">${breakdown}</div></div><div class="flex gap-2"><button onclick="loadForEdit('${r.id}')" class="text-slate-300">✎</button><button onclick="deleteRecord('${r.id}')" class="text-slate-300">✕</button></div></div><div class="mt-2 pt-2 border-t flex justify-between"><span class="text-xs text-slate-400">합계</span><span class="text-sm font-bold">${r.revenue.toLocaleString()}원</span></div>`;
+            d.className = 'bg-white border border-slate-100 p-4 rounded-xl shadow-sm text-left mb-2';
+            const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-50 px-2 py-0.5 rounded mr-1 text-[9px] font-bold text-slate-500 border border-slate-100">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
+            d.innerHTML = `
+                <div class="flex justify-between">
+                    <div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.date}</div><div class="flex flex-wrap mt-2 gap-1">${breakdown}</div></div>
+                    <div class="flex gap-2">
+                        <button onclick="loadForEdit('${r.id}')" class="text-slate-300 hover:text-indigo-500 transition-colors">✎</button>
+                        <button onclick="deleteRecord('${r.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">✕</button>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
+                    <div><span class="text-[10px] text-slate-400 block font-medium">일일 합계</span><span class="text-sm font-bold text-slate-700">${r.revenue.toLocaleString()}원</span></div>
+                    ${inc > 0 ? `<div class="text-right"><span class="text-[9px] text-emerald-500 font-bold block">인센티브</span><span class="text-sm font-bold text-emerald-600">+${Math.floor(inc).toLocaleString()}원</span></div>` : ''}
+                </div>`;
             return d;
         }
 
         window.renderStats = () => {
+            if (records.length === 0) return;
             const months = [...new Set(records.map(r => r.date.substring(0, 7)))].sort().reverse();
-            if (months.length === 0) return;
             const sel = document.getElementById('statsMonthSelect');
-            const cur = sel.value || months[0];
-            sel.innerHTML = months.map(m => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
+            const curMonth = sel.value || months[0];
+            sel.innerHTML = months.map(m => `<option value="${m}" ${m === curMonth ? 'selected' : ''}>${m.replace('-','년 ')}월</option>`).join('');
 
             const list = document.getElementById('monthlyIncentiveList');
             list.innerHTML = months.map(m => {
                 const rev = records.filter(r => r.date.startsWith(m)).reduce((a, b) => a + b.revenue, 0);
                 const inc = rev > THRESHOLD ? (rev - THRESHOLD) * 0.5 : 0;
-                return `<div class="flex justify-between p-3 bg-slate-50 rounded-xl text-xs"><span>${m}</span><span class="font-bold text-indigo-600">${Math.floor(inc).toLocaleString()}원</span></div>`;
+                return `<div class="flex justify-between p-3 bg-slate-50 rounded-xl text-xs border border-slate-100"><span class="font-bold text-slate-600">${m}</span><span class="font-bold text-indigo-600">${Math.floor(inc).toLocaleString()}원</span></div>`;
             }).join('');
 
-            const filtered = records.filter(r => r.date.startsWith(cur));
-            const sums = {}; Object.keys(CATEGORIES).forEach(k => sums[k] = 0);
-            filtered.forEach(r => Object.keys(r.counts).forEach(k => sums[k] += r.counts[k]));
+            const filtered = records.filter(r => r.date.startsWith(curMonth));
+            const sums = {}; 
+            const catRev = {};
+            Object.keys(CATEGORIES).forEach(k => { sums[k] = 0; catRev[k] = 0; });
+            filtered.forEach(r => Object.keys(r.counts).forEach(k => { sums[k] += r.counts[k]; catRev[k] += r.counts[k] * CATEGORIES[k].price; }));
 
-            const ctx = document.getElementById('categoryUnifiedChart').getContext('2d');
+            // 항목별 도넛 차트
+            const ctx2 = document.getElementById('categoryUnifiedChart').getContext('2d');
             if (categoryUnifiedChart) categoryUnifiedChart.destroy();
-            categoryUnifiedChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(CATEGORIES).map(k => CATEGORIES[k].label), datasets: [{ data: Object.keys(CATEGORIES).map(k => sums[k]), backgroundColor: Object.keys(CATEGORIES).map(k => CATEGORIES[k].color) }] }, options: { cutout: '65%' } });
-            
-            const tableContainer = document.getElementById('categoryStatsTable');
-            tableContainer.innerHTML = Object.keys(CATEGORIES).map(k => {
-                const count = sums[k];
-                if (count === 0) return '';
-                const rev = count * CATEGORIES[k].price;
-                return `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${CATEGORIES[k].color}"></div><span class="text-xs font-bold text-slate-600">${CATEGORIES[k].label}</span></div><div class="flex items-center gap-4 text-right"><div><div class="text-[9px] text-slate-400 uppercase">건수</div><div class="text-xs font-bold text-slate-800">${count}건</div></div><div class="w-20"><div class="text-[9px] text-slate-400 uppercase">매출</div><div class="text-xs font-bold text-slate-800">${rev.toLocaleString()}원</div></div></div></div>`;
+            categoryUnifiedChart = new Chart(ctx2, { 
+                type: 'doughnut', 
+                data: { 
+                    labels: Object.keys(CATEGORIES).map(k => CATEGORIES[k].label), 
+                    datasets: [{ 
+                        data: Object.keys(CATEGORIES).map(k => sums[k]), 
+                        backgroundColor: Object.keys(CATEGORIES).map(k => CATEGORIES[k].color),
+                        borderWidth: 2, borderColor: '#fff'
+                    }] 
+                }, 
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } }, cutout: '65%' } 
+            });
+
+            // 항목별 테이블 상세
+            const table = document.getElementById('categoryStatsTable');
+            table.innerHTML = Object.keys(CATEGORIES).map(k => {
+                const c = sums[k]; if (c === 0) return '';
+                return `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${CATEGORIES[k].color}"></div><span class="text-xs font-bold text-slate-600">${CATEGORIES[k].label}</span></div><div class="flex items-center gap-4 text-right"><div><div class="text-[9px] text-slate-400">건수</div><div class="text-xs font-bold text-slate-800">${c}건</div></div><div class="w-20"><div class="text-[9px] text-slate-400">매출</div><div class="text-xs font-bold text-slate-800">${catRev[k].toLocaleString()}원</div></div></div></div>`;
             }).join('');
+
+            // 월별 매출 바 차트
+            const monthlyTotals = {};
+            months.slice().reverse().forEach(m => monthlyTotals[m] = records.filter(r => r.date.startsWith(m)).reduce((a, b) => a + b.revenue, 0));
+            const ctx1 = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(ctx1, { type: 'bar', data: { labels: Object.keys(monthlyTotals).map(m => m.split('-')[1] + '월'), datasets: [{ label: '매출', data: Object.values(monthlyTotals), backgroundColor: '#4f46e5', borderRadius: 4, barThickness: 16 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } } });
         };
 
         window.renderDailyList = () => {
             const months = [...new Set(records.map(r => r.date.substring(0, 7)))].sort().reverse();
             if (months.length === 0) return;
-            const cur = document.getElementById('dailyMonthSelect').value || months[0];
-            document.getElementById('dailyMonthSelect').innerHTML = months.map(m => `<option value="${m}" ${m === currentSelected ? 'selected' : ''}>${m}</option>`).join('');
+            const sel = document.getElementById('dailyMonthSelect');
+            const curMonth = sel.value || months[0];
+            sel.innerHTML = months.map(m => `<option value="${m}" ${m === curMonth ? 'selected' : ''}>${m.replace('-','년 ')}월</option>`).join('');
 
-            const dayMap = {};
-            records.filter(r => r.date.startsWith(cur)).forEach(r => {
-                const d = parseInt(r.date.split('-')[2]);
-                dayMap[d] = (dayMap[d] || 0) + r.revenue;
-            });
-
-            const [y, m] = cur.split('-').map(Number);
-            const first = new Date(y, m-1, 1).getDay();
-            const last = new Date(y, m, 0).getDate();
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = ['일','월','화','수','목','금','토'].map(d => `<div class="calendar-header-day">${d}</div>`).join('');
-            for(let i=0; i<first; i++) grid.innerHTML += `<div class="calendar-day bg-slate-50"></div>`;
-            for(let i=1; i<=last; i++) {
-                const rev = dayMap[i] || 0;
-                grid.innerHTML += `<div class="calendar-day ${rev>0?'has-revenue':''}"> <span class="day-num">${i}</span> <span class="day-revenue">${rev>0?rev.toLocaleString():''}</span> </div>`;
-            }
+            const dayRevMap = {};
+            const dayIncMap = {};
+            let cumulative = 0;
             
+            // 시간 순서대로 정렬하여 인센티브 누적 계산 (일별 내역은 최신순으로 보여주기 위함)
+            const monthRecords = records.filter(r => r.date.startsWith(curMonth)).sort((a, b) => a.date.localeCompare(b.date) || (a.timestamp || 0) - (b.timestamp || 0));
             const detailList = document.getElementById('dailyDetailList');
             detailList.innerHTML = '';
-            records.filter(r => r.date.startsWith(cur)).forEach(r => detailList.appendChild(createRecordCard(r)));
+            
+            const cardElements = [];
+            monthRecords.forEach(r => {
+                const day = parseInt(r.date.split('-')[2]);
+                dayRevMap[day] = (dayRevMap[day] || 0) + r.revenue;
+                
+                let inc = 0;
+                const prevCumulative = cumulative;
+                cumulative += r.revenue;
+                if (cumulative > THRESHOLD) {
+                    inc = (cumulative - Math.max(THRESHOLD, prevCumulative)) * 0.5;
+                }
+                dayIncMap[day] = (dayIncMap[day] || 0) + inc;
+                cardElements.unshift(createRecordCard(r, inc));
+            });
+            cardElements.forEach(el => detailList.appendChild(el));
+
+            // 달력 그리기
+            const [y, m] = curMonth.split('-').map(Number);
+            const first = new Date(y, m-1, 1).getDay();
+            const last = new Date(y, m, 0).getDate();
+            const today = new Date();
+            const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+            
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = ['일','월','화','수','목','금','토'].map(d => `<div class="calendar-header-day ${d === '일' ? 'is-sun' : d === '토' ? 'is-sat' : ''}">${d}</div>`).join('');
+            for(let i=0; i<first; i++) grid.innerHTML += `<div class="calendar-day bg-slate-50/50"></div>`;
+            for(let i=1; i<=last; i++) {
+                const rev = dayRevMap[i] || 0;
+                const inc = dayIncMap[i] || 0;
+                const holiday = getHoliday(y, m, i);
+                const dayOfWeek = new Date(y, m-1, i).getDay();
+                const isToday = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}` === todayKey;
+                
+                let dayColorClass = (dayOfWeek === 0 || holiday) ? 'is-sun' : (dayOfWeek === 6 ? 'is-sat' : '');
+                
+                grid.innerHTML += `
+                    <div class="calendar-day ${rev > 0 ? 'has-revenue' : ''} ${isToday ? 'is-today' : ''}">
+                        <span class="day-num ${dayColorClass}">${i}</span>
+                        ${holiday ? `<span class="holiday-name">${holiday}</span>` : ''}
+                        <span class="day-revenue">${rev > 0 ? rev.toLocaleString() : ''}</span>
+                        ${inc > 0 ? `<span class="day-incentive-cal">+${Math.floor(inc).toLocaleString()}</span>` : ''}
+                    </div>`;
+            }
         };
 
         window.switchView = (v) => {
@@ -368,14 +432,32 @@
             document.getElementById('stats-daily-content').classList.toggle('hidden-view', t !== 'daily');
             document.getElementById('tab-monthly').className = t === 'monthly' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
             document.getElementById('tab-daily').className = t === 'daily' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+            if (t === 'monthly') renderStats(); else renderDailyList();
+        };
+
+        window.resetData = async () => {
+            if (!user || !confirm("모든 데이터를 초기화하시겠습니까? (복구 불가능)")) return;
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'records'));
+                const snap = await getDocs(q);
+                const batch = writeBatch(db);
+                snap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                showToast("초기화 완료");
+            } catch (e) { showToast("초기화 실패"); }
         };
 
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2000); }
         
+        // 초기 입력 폼 렌더링
         document.getElementById('inputDate').valueAsDate = new Date();
-        document.getElementById('categoryInputs').innerHTML = Object.keys(CATEGORIES).map(k => `<div class="space-y-1"><label class="block text-[11px] font-bold text-slate-400">${CATEGORIES[k].label} (${CATEGORIES[k].price})</label><input type="number" id="input_${k}" placeholder="0" class="w-full bg-slate-50 border p-3 rounded-lg text-sm font-bold"></div>`).join('');
-        
-        initAuth();
+        document.getElementById('categoryInputs').innerHTML = Object.keys(CATEGORIES).map(k => `
+            <div class="space-y-1">
+                <label class="block text-[11px] font-bold text-slate-400 ml-1">
+                    ${CATEGORIES[k].label} <span class="font-normal opacity-70">(${CATEGORIES[k].price.toLocaleString()}원)</span>
+                </label>
+                <input type="number" id="input_${k}" placeholder="0" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition">
+            </div>`).join('');
     </script>
 </body>
 </html>
