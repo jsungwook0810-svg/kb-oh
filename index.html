@@ -34,6 +34,22 @@
         <p class="text-sm font-bold text-slate-600">서버 연결 및 데이터 동기화 중...</p>
     </div>
 
+    <!-- Goal Setting Modal -->
+    <div id="goalModal" class="fixed inset-0 bg-slate-900/40 z-[110] hidden flex-col items-center justify-center px-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 class="font-bold text-slate-800 mb-2">목표 매출 설정</h3>
+            <p class="text-xs text-slate-500 mb-4">이번 달 달성하고 싶은 총 목표 매출액을 입력하세요.</p>
+            <div class="relative mb-6">
+                <input type="number" id="goalInput" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-right font-bold focus:ring-2 focus:ring-indigo-500 outline-none pr-8 text-lg">
+                <span class="absolute right-3 top-3.5 text-sm text-slate-400 font-bold">원</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeGoalModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">취소</button>
+                <button onclick="saveGoal()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition active:scale-95">저장하기</button>
+            </div>
+        </div>
+    </div>
+
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex justify-around items-center h-16 shadow-lg">
         <button onclick="switchView('input')" id="nav-input" class="flex flex-col items-center gap-1 text-indigo-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -47,20 +63,61 @@
 
     <div class="max-w-md mx-auto px-4 py-8">
         <div id="view-input">
-            <header class="mb-8 text-center">
+            <header class="mb-6 text-center">
                 <h1 class="text-2xl font-bold text-slate-800 font-serif tracking-tight">Personal Performance</h1>
                 <div id="syncStatus" class="inline-block mt-2 px-2 py-0.5 bg-emerald-50 text-[9px] text-emerald-600 rounded-full font-bold">Multi-Device Synced</div>
             </header>
 
-            <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+            <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl mb-6 relative overflow-hidden">
                 <div class="flex justify-between items-start mb-4 relative z-10">
                     <span class="text-slate-400 text-sm font-medium">이번 달 인센티브 (50%)</span>
-                    <button onclick="resetData()" class="text-[10px] bg-white/10 px-2 py-1 rounded">전체 초기화</button>
+                    <button onclick="resetData()" class="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition">전체 초기화</button>
                 </div>
                 <div class="text-4xl font-bold mb-4 relative z-10" id="totalIncentive">0원</div>
                 <div class="space-y-2 border-t border-white/10 pt-4 relative z-10">
                     <div class="flex justify-between text-sm"><span class="text-slate-400">이번 달 누적 매출</span><span class="font-semibold" id="totalRevenueDisplay">0원</span></div>
                     <div class="flex justify-between text-sm text-[11px]"><span class="text-slate-400">기준 차감액</span><span>5,650,000원</span></div>
+                </div>
+            </div>
+
+            <!-- New: Performance Dashboard Card -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-8">
+                <!-- Goal Progress -->
+                <div class="flex justify-between items-end mb-2">
+                    <div>
+                        <span class="text-[11px] font-bold text-slate-400">이달의 목표 매출</span>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="text-base font-bold text-slate-800" id="goalDisplay">10,000,000원</span>
+                            <button onclick="openGoalModal()" class="text-slate-300 hover:text-indigo-500 p-1 bg-slate-50 rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] font-bold text-slate-400">달성률</span>
+                        <div class="text-lg font-bold text-indigo-600" id="goalPercent">0%</div>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-5">
+                    <div id="goalProgressBar" class="bg-indigo-500 h-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                </div>
+
+                <!-- Insights -->
+                <div class="bg-slate-50 rounded-xl p-3 space-y-3 border border-slate-100">
+                    <div class="flex items-start gap-2.5">
+                        <div class="bg-blue-100 p-1.5 rounded-lg text-blue-600 mt-0.5"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg></div>
+                        <div class="flex-1">
+                            <div class="font-bold text-slate-700 text-xs mb-0.5">전월 동기 대비</div>
+                            <div class="text-[11px] text-slate-500 leading-tight" id="momText">데이터 수집 중...</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2.5 pt-3 border-t border-slate-200">
+                        <div class="bg-emerald-100 p-1.5 rounded-lg text-emerald-600 mt-0.5"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                        <div class="flex-1">
+                            <div class="font-bold text-slate-700 text-xs mb-0.5">예상 마감 성과</div>
+                            <div class="text-[11px] text-slate-500 leading-tight" id="expectedText">현재 추세 반영 계산 중...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -123,7 +180,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, doc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyBR7l4-gU0sqH9vq11MTm7-8HkpyH10PsU",
             authDomain: "kb-ohda.firebaseapp.com",
@@ -156,6 +212,9 @@
         let isRecentExpanded = false;
         let revenueChart = null;
         let categoryUnifiedChart = null;
+        
+        // Goal State
+        let monthlyGoal = parseInt(localStorage.getItem('sales_monthly_goal')) || 10000000;
 
         function getHoliday(year, month, day) {
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -183,7 +242,6 @@
 
         const startSync = () => {
             if (!user) return;
-            // RULE 1: 공유 데이터를 위해 'public/data/records' 경로 사용
             const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'records'));
             onSnapshot(q, (snapshot) => {
                 records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -196,7 +254,7 @@
                 }
             }, (err) => {
                 console.error("Firestore sync error:", err);
-                showToast("데이터 공유 권한이 없습니다. 보안 규칙을 확인하세요.");
+                showToast("데이터 동기화 오류");
             });
         };
 
@@ -216,7 +274,6 @@
             const data = { date, counts, revenue: recordRevenue, timestamp: Date.now() };
 
             try {
-                // RULE 1: Strict public path 적용
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'records');
                 if (editingId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', editingId), data);
@@ -228,10 +285,7 @@
                 }
                 cancelEdit();
                 clearInputs();
-            } catch (e) { 
-                console.error("Save error:", e);
-                showToast("저장 실패"); 
-            }
+            } catch (e) { showToast("저장 실패"); }
         };
 
         window.deleteRecord = async (id) => {
@@ -248,7 +302,7 @@
             editingId = id;
             document.getElementById('inputDate').value = r.date;
             Object.keys(CATEGORIES).forEach(k => document.getElementById(`input_${k}`).value = r.counts[k] || '');
-            document.getElementById('formTitle').innerHTML = "🛠 기록 수정 중";
+            document.getElementById('formTitle').innerHTML = "<span class='w-1.5 h-4 bg-orange-500 rounded-full'></span> 기록 수정 중";
             document.getElementById('submitBtn').textContent = "수정 완료";
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -256,7 +310,7 @@
 
         window.cancelEdit = () => {
             editingId = null;
-            document.getElementById('formTitle').innerHTML = "입력";
+            document.getElementById('formTitle').innerHTML = "<span class='w-1.5 h-4 bg-indigo-500 rounded-full'></span> 실적 입력";
             document.getElementById('submitBtn').textContent = "실적 저장하기";
             document.getElementById('cancelEditBtn').classList.add('hidden');
             clearInputs();
@@ -266,6 +320,74 @@
             Object.keys(CATEGORIES).forEach(k => document.getElementById(`input_${k}`).value = '');
             setTodayDate();
         }
+
+        // --- NEW: Dashboard Features (Goal, MoM, Projection) ---
+        window.openGoalModal = () => {
+            document.getElementById('goalInput').value = monthlyGoal;
+            document.getElementById('goalModal').classList.remove('hidden');
+            document.getElementById('goalModal').classList.add('flex');
+        };
+
+        window.closeGoalModal = () => {
+            document.getElementById('goalModal').classList.add('hidden');
+            document.getElementById('goalModal').classList.remove('flex');
+        };
+
+        window.saveGoal = () => {
+            const val = parseInt(document.getElementById('goalInput').value);
+            if(val && val > 0) {
+                monthlyGoal = val;
+                localStorage.setItem('sales_monthly_goal', monthlyGoal);
+                updateCalculations();
+                closeGoalModal();
+                showToast("목표가 설정되었습니다.");
+            }
+        };
+
+        function updateDashboardInsights(currentRevenue) {
+            // Update Goal UI
+            document.getElementById('goalDisplay').textContent = monthlyGoal.toLocaleString() + '원';
+            const percent = Math.min(100, Math.max(0, (currentRevenue / monthlyGoal) * 100)).toFixed(1);
+            document.getElementById('goalPercent').textContent = percent + '%';
+            document.getElementById('goalProgressBar').style.width = percent + '%';
+
+            const now = new Date();
+            const currentDay = now.getDate();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            
+            // MoM Logic (전월 동기 대비)
+            const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMonthPrefix = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+            
+            let lastMonthRevenueUpToToday = 0;
+            records.filter(r => r.date.startsWith(lastMonthPrefix)).forEach(r => {
+                const day = parseInt(r.date.split('-')[2]);
+                if (day <= currentDay) lastMonthRevenueUpToToday += r.revenue;
+            });
+
+            const momEl = document.getElementById('momText');
+            if (lastMonthRevenueUpToToday === 0) {
+                momEl.innerHTML = "지난달 비교 데이터가 없습니다.";
+            } else {
+                const diff = currentRevenue - lastMonthRevenueUpToToday;
+                if (diff >= 0) {
+                    momEl.innerHTML = `지난달 오늘까지 <span class="font-bold text-slate-700">${lastMonthRevenueUpToToday.toLocaleString()}원</span>을 기록했어요.<br>현재 <span class="font-bold text-blue-600">+${diff.toLocaleString()}원</span> 앞서고 있습니다! 🔥`;
+                } else {
+                    momEl.innerHTML = `지난달 오늘까지 <span class="font-bold text-slate-700">${lastMonthRevenueUpToToday.toLocaleString()}원</span>을 기록했어요.<br>지난달 페이스까지 <span class="font-bold text-rose-500">${Math.abs(diff).toLocaleString()}원</span> 남았습니다. 화이팅! 💪`;
+                }
+            }
+
+            // Expected End of Month Logic (예상 마감 성과)
+            const expectedEl = document.getElementById('expectedText');
+            if (currentDay > 0 && currentRevenue > 0) {
+                const expectedTotal = (currentRevenue / currentDay) * daysInMonth;
+                const expectedInc = Math.max(0, (expectedTotal - THRESHOLD) * 0.5);
+                expectedEl.innerHTML = `이 추세라면 총 <span class="font-bold text-slate-700">${Math.floor(expectedTotal).toLocaleString()}원</span>으로 마감되어<br><span class="font-bold text-emerald-600">${Math.floor(expectedInc).toLocaleString()}원</span>의 인센티브가 예상됩니다! 💸`;
+            } else {
+                expectedEl.innerHTML = "데이터가 더 모이면 예상 마감 수치를 계산해 드립니다.";
+            }
+        }
+        // ----------------------------------------------------
 
         function updateCalculations() {
             const currentMonth = new Date().toISOString().substring(0, 7);
@@ -278,11 +400,14 @@
             document.getElementById('totalIncentive').textContent = Math.floor(incentive).toLocaleString() + '원';
             document.getElementById('recordCount').textContent = records.length + '건';
 
+            // Refresh Dashboard UI
+            updateDashboardInsights(totalRevenue);
+
             const historyList = document.getElementById('historyList');
             historyList.innerHTML = '';
             
             if (records.length === 0) {
-                historyList.innerHTML = '<p class="text-slate-400 text-sm py-10">내역이 없습니다.</p>';
+                historyList.innerHTML = '<p class="text-slate-400 text-sm py-10 text-center">내역이 없습니다.</p>';
                 return;
             }
 
@@ -298,7 +423,7 @@
             }
         }
 
-        function createRecordCard(r, inc = 0) {
+        function createRecordCard(r) {
             const d = document.createElement('div');
             d.className = 'bg-white border border-slate-100 p-4 rounded-xl shadow-sm text-left mb-2';
             const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-50 px-2 py-0.5 rounded mr-1 text-[9px] font-bold text-slate-500 border border-slate-100">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
@@ -306,13 +431,12 @@
                 <div class="flex justify-between">
                     <div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.date}</div><div class="flex flex-wrap mt-2 gap-1">${breakdown}</div></div>
                     <div class="flex gap-2">
-                        <button onclick="loadForEdit('${r.id}')" class="text-slate-300 hover:text-indigo-500 transition-colors">✎</button>
-                        <button onclick="deleteRecord('${r.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">✕</button>
+                        <button onclick="loadForEdit('${r.id}')" class="text-slate-300 hover:text-indigo-500 transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                        <button onclick="deleteRecord('${r.id}')" class="text-slate-300 hover:text-rose-500 transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     </div>
                 </div>
                 <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
                     <div><span class="text-[10px] text-slate-400 block font-medium">일일 합계</span><span class="text-sm font-bold text-slate-700">${r.revenue.toLocaleString()}원</span></div>
-                    ${inc > 0 ? `<div class="text-right"><span class="text-[9px] text-emerald-500 font-bold block">인센티브</span><span class="text-sm font-bold text-emerald-600">+${Math.floor(inc).toLocaleString()}원</span></div>` : ''}
                 </div>`;
             return d;
         }
@@ -345,11 +469,12 @@
                     labels: Object.keys(CATEGORIES).map(k => CATEGORIES[k].label), 
                     datasets: [{ 
                         data: Object.keys(CATEGORIES).map(k => sums[k]), 
+                        revenue: Object.keys(CATEGORIES).map(k => catRev[k]),
                         backgroundColor: Object.keys(CATEGORIES).map(k => CATEGORIES[k].color),
                         borderWidth: 2, borderColor: '#fff'
                     }] 
                 }, 
-                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } }, cutout: '65%' } 
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } }, tooltip: { callbacks: { label: (ctx) => [` 종결수: ${ctx.raw}건`, ` 매출액: ${ctx.dataset.revenue[ctx.dataIndex].toLocaleString()}원`] } } }, cutout: '65%' } 
             });
 
             const table = document.getElementById('categoryStatsTable');
@@ -392,7 +517,20 @@
                     inc = (cumulative - Math.max(THRESHOLD, prevCumulative)) * 0.5;
                 }
                 dayIncMap[day] = (dayIncMap[day] || 0) + inc;
-                cardElements.unshift(createRecordCard(r, inc));
+                
+                // 일별 상세 리스트에는 인센티브 정보를 추가해서 생성
+                const d = document.createElement('div');
+                d.className = 'bg-white border border-slate-100 p-4 rounded-xl shadow-sm text-left mb-2';
+                const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-50 px-2 py-0.5 rounded mr-1 text-[9px] font-bold text-slate-500 border border-slate-100">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
+                d.innerHTML = `
+                    <div class="flex justify-between">
+                        <div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.date}</div><div class="flex flex-wrap mt-2 gap-1">${breakdown}</div></div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
+                        <div><span class="text-[10px] text-slate-400 block font-medium">일일 합계</span><span class="text-sm font-bold text-slate-700">${r.revenue.toLocaleString()}원</span></div>
+                        ${inc > 0 ? `<div class="text-right"><span class="text-[9px] text-emerald-500 font-bold block">인센티브 발생</span><span class="text-sm font-bold text-emerald-600">+${Math.floor(inc).toLocaleString()}원</span></div>` : ''}
+                    </div>`;
+                cardElements.unshift(d);
             });
             cardElements.forEach(el => detailList.appendChild(el));
 
