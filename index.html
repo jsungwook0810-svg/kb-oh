@@ -25,9 +25,33 @@
         .is-today { outline: 2px solid #4f46e5; outline-offset: -2px; z-index: 10; }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* 벚꽃잎 애니메이션 스타일 */
+        .petal {
+            position: absolute;
+            background: linear-gradient(135deg, #ffb7c5, #ff9eaf);
+            border-radius: 15px 0px 15px 0px;
+            box-shadow: 0 0 5px rgba(255, 183, 197, 0.4);
+            opacity: 0.7;
+            pointer-events: none;
+            animation: fall linear infinite, sway ease-in-out infinite alternate;
+        }
+        @keyframes fall {
+            0% { top: -10%; opacity: 0; }
+            10% { opacity: 0.7; }
+            90% { opacity: 0.7; }
+            100% { top: 110%; opacity: 0; }
+        }
+        @keyframes sway {
+            0% { transform: translateX(0px) rotate(0deg); }
+            100% { transform: translateX(30px) rotate(60deg); }
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-900 pb-24">
+<body class="bg-pink-50 min-h-screen text-slate-900 pb-24">
+
+    <!-- 벚꽃이 내릴 배경 컨테이너 -->
+    <div id="cherry-blossom-container" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
 
     <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[100] flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="loader mb-4"></div>
@@ -61,10 +85,11 @@
         </button>
     </nav>
 
-    <div class="max-w-md mx-auto px-4 py-8">
+    <!-- UI 컨텐츠가 벚꽃 위에 보이도록 relative z-10 추가 -->
+    <div class="max-w-md mx-auto px-4 py-8 relative z-10">
         <div id="view-input">
             <header class="mb-6 text-center">
-                <h1 class="text-2xl font-bold text-slate-800 font-serif tracking-tight">Personal Performance</h1>
+                <h1 class="text-2xl font-bold text-pink-500 font-serif tracking-tight">다혜 매출일기♥</h1>
                 <div id="syncStatus" class="inline-block mt-2 px-2 py-0.5 bg-emerald-50 text-[9px] text-emerald-600 rounded-full font-bold">Multi-Device Synced</div>
             </header>
 
@@ -215,6 +240,34 @@
         
         // Goal State
         let monthlyGoal = parseInt(localStorage.getItem('sales_monthly_goal')) || 10000000;
+
+        // --- 벚꽃 생성 로직 추가 ---
+        function createCherryBlossoms() {
+            const container = document.getElementById('cherry-blossom-container');
+            const petalCount = 35; // 화면에 흩날리는 벚꽃잎 개수
+            
+            for (let i = 0; i < petalCount; i++) {
+                const petal = document.createElement('div');
+                petal.classList.add('petal');
+                
+                // 크기, 위치, 속도 등을 랜덤하게 설정하여 자연스럽게 만듭니다.
+                const size = Math.random() * 8 + 6; // 6px ~ 14px
+                const left = Math.random() * 100; // 0vw ~ 100vw
+                const fallDuration = Math.random() * 6 + 6; // 6s ~ 12s
+                const swayDuration = Math.random() * 2 + 2; // 2s ~ 4s
+                const delay = Math.random() * 10; // 0s ~ 10s 딜레이
+                
+                petal.style.width = size + 'px';
+                petal.style.height = size + 'px';
+                petal.style.left = left + 'vw';
+                petal.style.animationDuration = fallDuration + 's, ' + swayDuration + 's';
+                petal.style.animationDelay = delay + 's, ' + delay + 's';
+                
+                container.appendChild(petal);
+            }
+        }
+        createCherryBlossoms(); // 페이지 로드 시 바로 실행
+        // ---------------------------
 
         function getHoliday(year, month, day) {
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -478,10 +531,35 @@
             });
 
             const table = document.getElementById('categoryStatsTable');
-            table.innerHTML = Object.keys(CATEGORIES).map(k => {
+            let tableHTML = Object.keys(CATEGORIES).map(k => {
                 const c = sums[k]; if (c === 0) return '';
                 return `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${CATEGORIES[k].color}"></div><span class="text-xs font-bold text-slate-600">${CATEGORIES[k].label}</span></div><div class="flex items-center gap-4 text-right"><div><div class="text-[9px] text-slate-400">건수</div><div class="text-xs font-bold text-slate-800">${c}건</div></div><div class="w-20"><div class="text-[9px] text-slate-400">매출</div><div class="text-xs font-bold text-slate-800">${catRev[k].toLocaleString()}원</div></div></div></div>`;
             }).join('');
+            
+            let totalCount = 0;
+            let totalRev = 0;
+            Object.keys(CATEGORIES).forEach(k => { totalCount += sums[k]; totalRev += catRev[k]; });
+            
+            if (totalCount > 0) {
+                tableHTML += `
+                <div class="flex items-center justify-between mt-2 pt-3 border-t border-slate-200">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-slate-800"></div>
+                        <span class="text-xs font-extrabold text-slate-800">총합</span>
+                    </div>
+                    <div class="flex items-center gap-4 text-right">
+                        <div>
+                            <div class="text-[9px] text-slate-500 font-bold">총 건수</div>
+                            <div class="text-xs font-extrabold text-slate-800">${totalCount}건</div>
+                        </div>
+                        <div class="w-20">
+                            <div class="text-[9px] text-slate-500 font-bold">총 매출</div>
+                            <div class="text-xs font-extrabold text-indigo-600">${totalRev.toLocaleString()}원</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            table.innerHTML = tableHTML;
 
             const monthlyTotals = {};
             months.slice().reverse().forEach(m => monthlyTotals[m] = records.filter(r => r.date.startsWith(m)).reduce((acc, curr) => acc + curr.revenue, 0));
