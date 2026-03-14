@@ -7,23 +7,30 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        /* 다이어리 감성의 폰트 적용 */
+        @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+        body { font-family: 'Gowun Dodum', sans-serif; }
+        
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .hidden-view { display: none; }
-        .tab-active { color: #4f46e5; font-weight: 700; border-bottom: 2px solid #4f46e5; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 0.75rem; overflow: hidden; }
+        
+        /* 탭 액티브 색상 (Rose-500) */
+        .tab-active { color: #f43f5e; font-weight: 700; border-bottom: 2px solid #f43f5e; }
+        
+        /* Calendar Styles (핑크톤 변경) */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #ffe4e6; border: 1px solid #fecdd3; border-radius: 0.75rem; overflow: hidden; }
         .calendar-day { background-color: #fff; min-height: 72px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .calendar-header-day { background-color: #f8fafc; padding: 8px 0; text-align: center; font-size: 10px; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0; }
-        .day-num { font-size: 10px; font-weight: 600; margin-bottom: 2px; }
-        .day-revenue { font-size: 8px; font-weight: 800; color: #4f46e5; text-align: center; word-break: break-all; line-height: 1.2; letter-spacing: -0.02em; }
+        .calendar-header-day { background-color: #fff1f2; padding: 8px 0; text-align: center; font-size: 10px; font-weight: 700; color: #881337; border-bottom: 1px solid #fecdd3; }
+        .day-num { font-size: 10px; font-weight: 600; margin-bottom: 2px; color: #4c0519; }
+        .day-revenue { font-size: 8px; font-weight: 800; color: #e11d48; text-align: center; word-break: break-all; line-height: 1.2; letter-spacing: -0.02em; }
         .day-incentive-cal { font-size: 7px; font-weight: 800; color: #10b981; text-align: center; margin-top: 1px; line-height: 1; }
         .holiday-name { font-size: 7px; color: #f43f5e; transform: scale(0.9); line-height: 1; text-align: center; margin-bottom: 2px; }
-        .has-revenue { background-color: #f5f3ff; }
+        .has-revenue { background-color: #fff1f2; }
         .is-sun, .is-holiday { color: #f43f5e !important; }
         .is-sat { color: #3b82f6 !important; }
-        .is-today { outline: 2px solid #4f46e5; outline-offset: -2px; z-index: 10; }
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        .is-today { outline: 2px solid #f43f5e; outline-offset: -2px; z-index: 10; }
+        
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #f43f5e; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         /* 벚꽃잎 애니메이션 스타일 */
@@ -53,158 +60,177 @@
     <!-- 벚꽃이 내릴 배경 컨테이너 -->
     <div id="cherry-blossom-container" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
 
+    <!-- 배경 벚꽃 나무 가지 SVG -->
+    <svg class="fixed bottom-0 left-0 w-64 h-64 md:w-96 md:h-96 opacity-60 pointer-events-none z-0" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M-20,220 Q40,150 80,120 T160,70" fill="none" stroke="#5c4033" stroke-width="3" stroke-linecap="round"/>
+        <path d="M40,160 Q70,130 100,80" fill="none" stroke="#5c4033" stroke-width="2" stroke-linecap="round"/>
+        <path d="M80,120 Q120,110 140,50" fill="none" stroke="#5c4033" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- 꽃잎들 -->
+        <circle cx="160" cy="70" r="6" fill="#fbcfe8" opacity="0.9"/>
+        <circle cx="155" cy="65" r="5" fill="#f43f5e" opacity="0.8"/>
+        <circle cx="165" cy="68" r="4" fill="#fda4af" opacity="0.9"/>
+        <circle cx="100" cy="80" r="5" fill="#f9a8d4" opacity="0.9"/>
+        <circle cx="95" cy="75" r="4" fill="#f43f5e" opacity="0.8"/>
+        <circle cx="140" cy="50" r="6" fill="#fbcfe8" opacity="0.9"/>
+        <circle cx="135" cy="45" r="5" fill="#fda4af" opacity="0.9"/>
+        <circle cx="70" cy="130" r="5" fill="#f9a8d4" opacity="0.9"/>
+        <circle cx="120" cy="110" r="4" fill="#f43f5e" opacity="0.8"/>
+    </svg>
+
     <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[100] flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="loader mb-4"></div>
-        <p class="text-sm font-bold text-slate-600">서버 연결 및 데이터 동기화 중...</p>
+        <p class="text-sm font-bold text-rose-600">일기장 여는 중...</p>
     </div>
 
     <!-- Goal Setting Modal -->
-    <div id="goalModal" class="fixed inset-0 bg-slate-900/40 z-[110] hidden flex-col items-center justify-center px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 class="font-bold text-slate-800 mb-2">목표 매출 설정</h3>
-            <p class="text-xs text-slate-500 mb-4">이번 달 달성하고 싶은 총 목표 매출액을 입력하세요.</p>
+    <div id="goalModal" class="fixed inset-0 bg-rose-900/40 z-[110] hidden flex-col items-center justify-center px-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border-2 border-pink-100">
+            <h3 class="font-bold text-rose-800 mb-2">목표 매출 설정</h3>
+            <p class="text-xs text-rose-500 mb-4">이번 달 달성하고 싶은 총 목표 매출액을 입력하세요.</p>
             <div class="relative mb-6">
-                <input type="number" id="goalInput" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-right font-bold focus:ring-2 focus:ring-indigo-500 outline-none pr-8 text-lg">
-                <span class="absolute right-3 top-3.5 text-sm text-slate-400 font-bold">원</span>
+                <input type="number" id="goalInput" class="w-full bg-rose-50 border border-pink-200 p-3 rounded-xl text-right font-bold focus:ring-2 focus:ring-pink-400 outline-none pr-8 text-lg text-rose-900">
+                <span class="absolute right-3 top-3.5 text-sm text-rose-400 font-bold">원</span>
             </div>
             <div class="flex gap-2">
-                <button onclick="closeGoalModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">취소</button>
-                <button onclick="saveGoal()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition active:scale-95">저장하기</button>
+                <button onclick="closeGoalModal()" class="flex-1 py-3 bg-rose-100 text-rose-600 font-bold rounded-xl hover:bg-rose-200 transition">취소</button>
+                <button onclick="saveGoal()" class="flex-1 py-3 bg-rose-500 text-white font-bold rounded-xl hover:bg-rose-600 shadow-lg shadow-pink-200 transition active:scale-95">저장하기</button>
             </div>
         </div>
     </div>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex justify-around items-center h-16 shadow-lg">
-        <button onclick="switchView('input')" id="nav-input" class="flex flex-col items-center gap-1 text-indigo-600">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-pink-100 z-50 flex justify-around items-center h-16 shadow-lg">
+        <button onclick="switchView('input')" id="nav-input" class="flex flex-col items-center gap-1 text-rose-500 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
             <span class="text-[10px] font-bold">실적 입력</span>
         </button>
-        <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center gap-1 text-slate-400">
+        <button onclick="switchView('stats')" id="nav-stats" class="flex flex-col items-center gap-1 text-stone-400 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             <span class="text-[10px] font-bold">통계 및 내역</span>
         </button>
     </nav>
 
-    <!-- UI 컨텐츠가 벚꽃 위에 보이도록 relative z-10 추가 -->
+    <!-- UI 컨텐츠가 벚꽃/배경나무 위에 보이도록 relative z-10 추가 -->
     <div class="max-w-md mx-auto px-4 py-8 relative z-10">
         <div id="view-input">
             <header class="mb-6 text-center">
-                <h1 class="text-2xl font-bold text-pink-500 font-serif tracking-tight">다혜 매출일기♥</h1>
-                <div id="syncStatus" class="inline-block mt-2 px-2 py-0.5 bg-emerald-50 text-[9px] text-emerald-600 rounded-full font-bold">Multi-Device Synced</div>
+                <h1 class="text-3xl font-extrabold text-rose-500 tracking-tight drop-shadow-sm">다혜 매출일기♥</h1>
+                <div id="syncStatus" class="inline-block mt-2 px-3 py-1 bg-pink-100 text-[10px] text-pink-600 rounded-full font-bold shadow-sm">Multi-Device Synced</div>
             </header>
 
-            <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl mb-6 relative overflow-hidden">
+            <div class="bg-gradient-to-br from-pink-400 to-rose-400 rounded-2xl p-6 text-white shadow-xl shadow-pink-200 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                 <div class="flex justify-between items-start mb-4 relative z-10">
-                    <span class="text-slate-400 text-sm font-medium">이번 달 인센티브 (50%)</span>
-                    <button onclick="resetData()" class="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition">전체 초기화</button>
+                    <span class="text-pink-50 text-sm font-bold">이번 달 인센티브 (50%)</span>
+                    <button onclick="resetData()" class="text-[10px] bg-white/20 px-2 py-1 rounded-md hover:bg-white/30 transition font-bold">전체 초기화</button>
                 </div>
-                <div class="text-4xl font-bold mb-4 relative z-10" id="totalIncentive">0원</div>
-                <div class="space-y-2 border-t border-white/10 pt-4 relative z-10">
-                    <div class="flex justify-between text-sm"><span class="text-slate-400">이번 달 누적 매출</span><span class="font-semibold" id="totalRevenueDisplay">0원</span></div>
-                    <div class="flex justify-between text-sm text-[11px]"><span class="text-slate-400">기준 차감액</span><span>5,650,000원</span></div>
+                <div class="text-4xl font-extrabold mb-4 relative z-10 drop-shadow-md" id="totalIncentive">0원</div>
+                <div class="space-y-2 border-t border-white/20 pt-4 relative z-10">
+                    <div class="flex justify-between text-sm font-medium"><span class="text-pink-100">이번 달 누적 매출</span><span class="font-bold text-white" id="totalRevenueDisplay">0원</span></div>
+                    <div class="flex justify-between text-sm text-[11px] font-medium"><span class="text-pink-100">기준 차감액</span><span class="text-white">5,650,000원</span></div>
                 </div>
             </div>
 
-            <!-- New: Performance Dashboard Card -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-8">
+            <!-- Performance Dashboard Card -->
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50 mb-8">
                 <!-- Goal Progress -->
                 <div class="flex justify-between items-end mb-2">
                     <div>
-                        <span class="text-[11px] font-bold text-slate-400">이달의 목표 매출</span>
+                        <span class="text-[11px] font-bold text-rose-400">이달의 목표 매출</span>
                         <div class="flex items-center gap-1.5 mt-0.5">
-                            <span class="text-base font-bold text-slate-800" id="goalDisplay">10,000,000원</span>
-                            <button onclick="openGoalModal()" class="text-slate-300 hover:text-indigo-500 p-1 bg-slate-50 rounded">
+                            <span class="text-base font-extrabold text-rose-900" id="goalDisplay">10,000,000원</span>
+                            <button onclick="openGoalModal()" class="text-rose-300 hover:text-rose-500 p-1 bg-rose-50 rounded-lg transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                             </button>
                         </div>
                     </div>
                     <div class="text-right">
-                        <span class="text-[10px] font-bold text-slate-400">달성률</span>
-                        <div class="text-lg font-bold text-indigo-600" id="goalPercent">0%</div>
+                        <span class="text-[10px] font-bold text-rose-400">달성률</span>
+                        <div class="text-lg font-extrabold text-rose-500" id="goalPercent">0%</div>
                     </div>
                 </div>
-                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-5">
-                    <div id="goalProgressBar" class="bg-indigo-500 h-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                <div class="w-full bg-rose-100 h-3 rounded-full overflow-hidden mb-5 shadow-inner">
+                    <div id="goalProgressBar" class="bg-gradient-to-r from-pink-400 to-rose-400 h-full transition-all duration-700 ease-out" style="width: 0%"></div>
                 </div>
 
                 <!-- Insights -->
-                <div class="bg-slate-50 rounded-xl p-3 space-y-3 border border-slate-100">
+                <div class="bg-rose-50/80 rounded-xl p-3 space-y-3 border border-pink-100">
                     <div class="flex items-start gap-2.5">
-                        <div class="bg-blue-100 p-1.5 rounded-lg text-blue-600 mt-0.5"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg></div>
+                        <div class="bg-white p-1.5 rounded-lg text-pink-500 mt-0.5 shadow-sm"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg></div>
                         <div class="flex-1">
-                            <div class="font-bold text-slate-700 text-xs mb-0.5">전월 동기 대비</div>
-                            <div class="text-[11px] text-slate-500 leading-tight" id="momText">데이터 수집 중...</div>
+                            <div class="font-bold text-rose-800 text-xs mb-0.5">전월 동기 대비</div>
+                            <div class="text-[11px] text-rose-600 leading-tight font-medium" id="momText">데이터 수집 중...</div>
                         </div>
                     </div>
-                    <div class="flex items-start gap-2.5 pt-3 border-t border-slate-200">
-                        <div class="bg-emerald-100 p-1.5 rounded-lg text-emerald-600 mt-0.5"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                    <div class="flex items-start gap-2.5 pt-3 border-t border-pink-200/60">
+                        <div class="bg-white p-1.5 rounded-lg text-emerald-500 mt-0.5 shadow-sm"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
                         <div class="flex-1">
-                            <div class="font-bold text-slate-700 text-xs mb-0.5">예상 마감 성과</div>
-                            <div class="text-[11px] text-slate-500 leading-tight" id="expectedText">현재 추세 반영 계산 중...</div>
+                            <div class="font-bold text-rose-800 text-xs mb-0.5">예상 마감 성과</div>
+                            <div class="text-[11px] text-rose-600 leading-tight font-medium" id="expectedText">현재 추세 반영 계산 중...</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="inputFormContainer" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-8 transition-all">
+            <div id="inputFormContainer" class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50 mb-8 transition-all">
                 <div class="flex items-center justify-between mb-5">
-                    <h2 id="formTitle" class="text-sm font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> 실적 입력</h2>
-                    <input type="date" id="inputDate" class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md outline-none border-none">
+                    <h2 id="formTitle" class="text-sm font-bold text-rose-800 flex items-center gap-2"><span class="w-1.5 h-4 bg-rose-400 rounded-full"></span> 실적 입력</h2>
+                    <input type="date" id="inputDate" class="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-md outline-none border border-pink-100">
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-6" id="categoryInputs"></div>
                 <div class="flex gap-2">
-                    <button id="cancelEditBtn" onclick="cancelEdit()" class="hidden flex-1 bg-slate-200 text-slate-600 font-bold py-4 rounded-xl">취소</button>
-                    <button id="submitBtn" onclick="handleRecordSubmit()" class="flex-[2] bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 active:scale-95 transition shadow-lg shadow-indigo-100">실적 저장하기</button>
+                    <button id="cancelEditBtn" onclick="cancelEdit()" class="hidden flex-1 bg-stone-100 text-stone-600 font-bold py-4 rounded-xl hover:bg-stone-200 transition">취소</button>
+                    <button id="submitBtn" onclick="handleRecordSubmit()" class="flex-[2] bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-4 rounded-xl hover:from-pink-600 hover:to-rose-600 active:scale-95 transition shadow-lg shadow-pink-200">실적 저장하기</button>
                 </div>
             </div>
             
             <div id="historySection">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-sm font-bold text-slate-800">최근 입력 내역</h2>
-                    <span id="recordCount" class="text-[11px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">0건</span>
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <h2 class="text-sm font-bold text-rose-800">최근 입력 내역</h2>
+                    <span id="recordCount" class="text-[11px] font-bold bg-white text-rose-500 px-2 py-0.5 rounded-full border border-pink-100 shadow-sm">0건</span>
                 </div>
                 <div id="historyList" class="space-y-3 pb-4"></div>
             </div>
         </div>
 
         <div id="view-stats" class="hidden-view">
-            <header class="mb-6"><h1 class="text-2xl font-bold text-slate-800 font-serif">통계 및 내역</h1></header>
-            <div class="flex border-b border-slate-200 mb-6">
+            <header class="mb-6"><h1 class="text-2xl font-extrabold text-rose-500 font-serif tracking-tight drop-shadow-sm">통계 및 내역</h1></header>
+            <div class="flex border-b border-pink-200 mb-6 bg-white/60 backdrop-blur-sm rounded-t-xl overflow-hidden">
                 <button onclick="switchStatsTab('monthly')" id="tab-monthly" class="flex-1 py-3 text-sm font-bold tab-active">월별 통계</button>
-                <button onclick="switchStatsTab('daily')" id="tab-daily" class="flex-1 py-3 text-sm font-bold text-slate-400">일별 내역</button>
+                <button onclick="switchStatsTab('daily')" id="tab-daily" class="flex-1 py-3 text-sm font-bold text-stone-400 hover:text-rose-400 transition-colors">일별 내역</button>
             </div>
             
             <div id="stats-monthly-content" class="space-y-6">
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h2 class="text-sm font-bold text-slate-800 mb-4 text-center">월별 매출 현황</h2><div class="h-48 w-full"><canvas id="revenueChart"></canvas></div></div>
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h2 class="text-sm font-bold text-slate-800 mb-4">월별 정산 리포트</h2><div id="monthlyIncentiveList" class="space-y-3"></div></div>
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-6"><h2 class="text-sm font-bold text-slate-800">항목별 상세 분석</h2><select id="statsMonthSelect" onchange="renderStats()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded outline-none border-none"></select></div>
-                    <div class="space-y-6"><div class="h-64 flex justify-center"><canvas id="categoryUnifiedChart"></canvas></div><div id="categoryStatsTable" class="mt-6 border-t border-slate-100 pt-4 space-y-3"></div></div>
+                <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50"><h2 class="text-sm font-bold text-rose-800 mb-4 text-center">월별 매출 현황</h2><div class="h-48 w-full"><canvas id="revenueChart"></canvas></div></div>
+                <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50"><h2 class="text-sm font-bold text-rose-800 mb-4">월별 정산 리포트</h2><div id="monthlyIncentiveList" class="space-y-3"></div></div>
+                <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-sm font-bold text-rose-800">항목별 상세 분석</h2><select id="statsMonthSelect" onchange="renderStats()" class="text-xs font-bold text-rose-600 bg-rose-50 border border-pink-100 px-2 py-1 rounded outline-none"></select></div>
+                    <div class="space-y-6"><div class="h-64 flex justify-center"><canvas id="categoryUnifiedChart"></canvas></div><div id="categoryStatsTable" class="mt-6 border-t border-pink-100 pt-4 space-y-3"></div></div>
                 </div>
             </div>
 
             <div id="stats-daily-content" class="hidden-view">
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm mb-6">
-                    <div class="flex justify-between items-center mb-4"><h2 class="text-sm font-bold text-slate-800">일별 매출 달력</h2><select id="dailyMonthSelect" onchange="renderDailyList()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded outline-none border-none"></select></div>
+                <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50 mb-6">
+                    <div class="flex justify-between items-center mb-4"><h2 class="text-sm font-bold text-rose-800">일별 매출 달력</h2><select id="dailyMonthSelect" onchange="renderDailyList()" class="text-xs font-bold text-rose-600 bg-rose-50 border border-pink-100 px-2 py-1 rounded outline-none"></select></div>
                     <div class="calendar-grid" id="calendarGrid"></div>
-                    <div class="mt-2 text-[9px] text-slate-400 text-right font-medium flex justify-between">
-                        <span>* 빨간색: 공휴일/일요일, 파란색: 토요일</span>
-                        <span class="text-emerald-500">* 초록색: 인센티브 발생분</span>
+                    <div class="mt-2 text-[9px] text-rose-400 text-right font-medium flex justify-between">
+                        <span>* 빨간색: 휴일, 파란색: 토요일</span>
+                        <span class="text-emerald-500 font-bold">* 초록색: 인센티브 발생</span>
                     </div>
                 </div>
-                <h2 class="text-sm font-bold text-slate-800 mb-4 px-1 tracking-tight">상세 기록 리스트</h2>
+                <h2 class="text-sm font-bold text-rose-800 mb-4 px-1 tracking-tight">상세 기록 리스트</h2>
                 <div id="dailyDetailList" class="space-y-3"></div>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full text-sm font-medium opacity-0 transition-all duration-300 shadow-xl z-50 pointer-events-none">데이터 전송 중...</div>
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-rose-800/90 backdrop-blur-sm text-white px-6 py-3 rounded-full text-sm font-bold opacity-0 transition-all duration-300 shadow-xl shadow-rose-900/20 z-50 pointer-events-none">데이터 전송 중...</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, doc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
+        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyBR7l4-gU0sqH9vq11MTm7-8HkpyH10PsU",
             authDomain: "kb-ohda.firebaseapp.com",
@@ -215,13 +241,14 @@
         };
         const appId = "kb-ohda"; 
 
+        // 차트와 UI에 맞춰 따뜻한 톤으로 색상 변경
         const CATEGORIES = {
-            general: { label: '일반', price: 10000, color: '#3b82f6' },
-            benefit: { label: '실손급여', price: 4650, color: '#ef4444' },
-            nonBenefit: { label: '실손비급여', price: 9000, color: '#10b981' },
-            genInvest: { label: '일반조사', price: 30000, color: '#f59e0b' },
-            invExemption: { label: '조사면책', price: 60000, color: '#6366f1' },
-            exemption: { label: '면책', price: 10000, color: '#ec4899' }
+            general: { label: '일반', price: 10000, color: '#f43f5e' }, // rose-500
+            benefit: { label: '실손급여', price: 4650, color: '#fca5a5' }, // red-300
+            nonBenefit: { label: '실손비급여', price: 9000, color: '#fb7185' }, // rose-400
+            genInvest: { label: '일반조사', price: 30000, color: '#fde047' }, // yellow-300
+            invExemption: { label: '조사면책', price: 60000, color: '#a78bfa' }, // purple-400
+            exemption: { label: '면책', price: 10000, color: '#38bdf8' } // sky-400
         };
         const THRESHOLD = 5650000;
         const SOLAR_HOLIDAYS = { '01-01': '신정', '03-01': '삼일절', '05-05': '어린이날', '06-06': '현충일', '08-15': '광복절', '10-03': '개천절', '10-09': '한글날', '12-25': '성탄절' };
@@ -238,24 +265,22 @@
         let revenueChart = null;
         let categoryUnifiedChart = null;
         
-        // Goal State
         let monthlyGoal = parseInt(localStorage.getItem('sales_monthly_goal')) || 10000000;
 
-        // --- 벚꽃 생성 로직 추가 ---
+        // --- 벚꽃 생성 로직 ---
         function createCherryBlossoms() {
             const container = document.getElementById('cherry-blossom-container');
-            const petalCount = 35; // 화면에 흩날리는 벚꽃잎 개수
+            const petalCount = 40; 
             
             for (let i = 0; i < petalCount; i++) {
                 const petal = document.createElement('div');
                 petal.classList.add('petal');
                 
-                // 크기, 위치, 속도 등을 랜덤하게 설정하여 자연스럽게 만듭니다.
-                const size = Math.random() * 8 + 6; // 6px ~ 14px
-                const left = Math.random() * 100; // 0vw ~ 100vw
-                const fallDuration = Math.random() * 6 + 6; // 6s ~ 12s
-                const swayDuration = Math.random() * 2 + 2; // 2s ~ 4s
-                const delay = Math.random() * 10; // 0s ~ 10s 딜레이
+                const size = Math.random() * 8 + 6; 
+                const left = Math.random() * 100; 
+                const fallDuration = Math.random() * 15 + 15; // 15s ~ 30s (살랑살랑 부드럽게)
+                const swayDuration = Math.random() * 3 + 3; // 3s ~ 6s
+                const delay = Math.random() * 15; 
                 
                 petal.style.width = size + 'px';
                 petal.style.height = size + 'px';
@@ -266,7 +291,7 @@
                 container.appendChild(petal);
             }
         }
-        createCherryBlossoms(); // 페이지 로드 시 바로 실행
+        createCherryBlossoms(); 
         // ---------------------------
 
         function getHoliday(year, month, day) {
@@ -363,7 +388,7 @@
 
         window.cancelEdit = () => {
             editingId = null;
-            document.getElementById('formTitle').innerHTML = "<span class='w-1.5 h-4 bg-indigo-500 rounded-full'></span> 실적 입력";
+            document.getElementById('formTitle').innerHTML = "<span class='w-1.5 h-4 bg-rose-400 rounded-full'></span> 실적 입력";
             document.getElementById('submitBtn').textContent = "실적 저장하기";
             document.getElementById('cancelEditBtn').classList.add('hidden');
             clearInputs();
@@ -374,7 +399,6 @@
             setTodayDate();
         }
 
-        // --- NEW: Dashboard Features (Goal, MoM, Projection) ---
         window.openGoalModal = () => {
             document.getElementById('goalInput').value = monthlyGoal;
             document.getElementById('goalModal').classList.remove('hidden');
@@ -398,7 +422,6 @@
         };
 
         function updateDashboardInsights(currentRevenue) {
-            // Update Goal UI
             document.getElementById('goalDisplay').textContent = monthlyGoal.toLocaleString() + '원';
             const percent = Math.min(100, Math.max(0, (currentRevenue / monthlyGoal) * 100)).toFixed(1);
             document.getElementById('goalPercent').textContent = percent + '%';
@@ -408,7 +431,6 @@
             const currentDay = now.getDate();
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             
-            // MoM Logic (전월 동기 대비)
             const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const lastMonthPrefix = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
             
@@ -424,23 +446,21 @@
             } else {
                 const diff = currentRevenue - lastMonthRevenueUpToToday;
                 if (diff >= 0) {
-                    momEl.innerHTML = `지난달 오늘까지 <span class="font-bold text-slate-700">${lastMonthRevenueUpToToday.toLocaleString()}원</span>을 기록했어요.<br>현재 <span class="font-bold text-blue-600">+${diff.toLocaleString()}원</span> 앞서고 있습니다! 🔥`;
+                    momEl.innerHTML = `지난달 오늘까지 <span class="font-bold text-rose-800">${lastMonthRevenueUpToToday.toLocaleString()}원</span>을 기록했어요.<br>현재 <span class="font-bold text-pink-500">+${diff.toLocaleString()}원</span> 앞서고 있습니다! 🔥`;
                 } else {
-                    momEl.innerHTML = `지난달 오늘까지 <span class="font-bold text-slate-700">${lastMonthRevenueUpToToday.toLocaleString()}원</span>을 기록했어요.<br>지난달 페이스까지 <span class="font-bold text-rose-500">${Math.abs(diff).toLocaleString()}원</span> 남았습니다. 화이팅! 💪`;
+                    momEl.innerHTML = `지난달 오늘까지 <span class="font-bold text-rose-800">${lastMonthRevenueUpToToday.toLocaleString()}원</span>을 기록했어요.<br>지난달 페이스까지 <span class="font-bold text-rose-500">${Math.abs(diff).toLocaleString()}원</span> 남았습니다. 화이팅! 💪`;
                 }
             }
 
-            // Expected End of Month Logic (예상 마감 성과)
             const expectedEl = document.getElementById('expectedText');
             if (currentDay > 0 && currentRevenue > 0) {
                 const expectedTotal = (currentRevenue / currentDay) * daysInMonth;
                 const expectedInc = Math.max(0, (expectedTotal - THRESHOLD) * 0.5);
-                expectedEl.innerHTML = `이 추세라면 총 <span class="font-bold text-slate-700">${Math.floor(expectedTotal).toLocaleString()}원</span>으로 마감되어<br><span class="font-bold text-emerald-600">${Math.floor(expectedInc).toLocaleString()}원</span>의 인센티브가 예상됩니다! 💸`;
+                expectedEl.innerHTML = `이 추세라면 총 <span class="font-bold text-rose-800">${Math.floor(expectedTotal).toLocaleString()}원</span>으로 마감되어<br><span class="font-bold text-emerald-500">${Math.floor(expectedInc).toLocaleString()}원</span>의 인센티브가 예상됩니다! 💸`;
             } else {
                 expectedEl.innerHTML = "데이터가 더 모이면 예상 마감 수치를 계산해 드립니다.";
             }
         }
-        // ----------------------------------------------------
 
         function updateCalculations() {
             const currentMonth = new Date().toISOString().substring(0, 7);
@@ -453,14 +473,13 @@
             document.getElementById('totalIncentive').textContent = Math.floor(incentive).toLocaleString() + '원';
             document.getElementById('recordCount').textContent = records.length + '건';
 
-            // Refresh Dashboard UI
             updateDashboardInsights(totalRevenue);
 
             const historyList = document.getElementById('historyList');
             historyList.innerHTML = '';
             
             if (records.length === 0) {
-                historyList.innerHTML = '<p class="text-slate-400 text-sm py-10 text-center">내역이 없습니다.</p>';
+                historyList.innerHTML = '<p class="text-rose-300 font-bold text-sm py-10 text-center">내역이 없습니다.</p>';
                 return;
             }
 
@@ -469,27 +488,28 @@
 
             if (!isRecentExpanded && records.length > 3) {
                 const b = document.createElement('button');
-                b.className = "w-full py-4 bg-slate-100 rounded-xl text-xs font-bold text-slate-500 mt-2 hover:bg-slate-200 transition";
+                b.className = "w-full py-4 bg-white border border-pink-100 shadow-sm rounded-xl text-xs font-bold text-rose-500 mt-2 hover:bg-rose-50 transition";
                 b.textContent = "최근 기록 더보기";
                 b.onclick = () => { isRecentExpanded = true; updateCalculations(); };
                 historyList.appendChild(b);
             }
         }
 
-        function createRecordCard(r) {
+        function createRecordCard(r, inc = 0) {
             const d = document.createElement('div');
-            d.className = 'bg-white border border-slate-100 p-4 rounded-xl shadow-sm text-left mb-2';
-            const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-50 px-2 py-0.5 rounded mr-1 text-[9px] font-bold text-slate-500 border border-slate-100">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
+            d.className = 'bg-white/90 backdrop-blur-sm border border-pink-100 p-4 rounded-xl shadow-sm text-left mb-2';
+            const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-rose-50 px-2 py-0.5 rounded mr-1 text-[9px] font-bold text-rose-600 border border-pink-100">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
             d.innerHTML = `
                 <div class="flex justify-between">
-                    <div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.date}</div><div class="flex flex-wrap mt-2 gap-1">${breakdown}</div></div>
+                    <div><div class="text-[10px] text-rose-400 font-bold tracking-tighter">${r.date}</div><div class="flex flex-wrap mt-2 gap-1">${breakdown}</div></div>
                     <div class="flex gap-2">
-                        <button onclick="loadForEdit('${r.id}')" class="text-slate-300 hover:text-indigo-500 transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                        <button onclick="deleteRecord('${r.id}')" class="text-slate-300 hover:text-rose-500 transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                        <button onclick="loadForEdit('${r.id}')" class="text-rose-300 hover:text-rose-500 transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                        <button onclick="deleteRecord('${r.id}')" class="text-rose-300 hover:text-red-500 transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     </div>
                 </div>
-                <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
-                    <div><span class="text-[10px] text-slate-400 block font-medium">일일 합계</span><span class="text-sm font-bold text-slate-700">${r.revenue.toLocaleString()}원</span></div>
+                <div class="mt-3 pt-3 border-t border-pink-50 flex justify-between items-center">
+                    <div><span class="text-[10px] text-rose-400 block font-bold">일일 합계</span><span class="text-sm font-extrabold text-rose-800">${r.revenue.toLocaleString()}원</span></div>
+                    ${inc > 0 ? `<div class="text-right"><span class="text-[9px] text-emerald-500 font-bold block">인센티브 발생</span><span class="text-sm font-extrabold text-emerald-500">+${Math.floor(inc).toLocaleString()}원</span></div>` : ''}
                 </div>`;
             return d;
         }
@@ -505,7 +525,7 @@
             list.innerHTML = months.map(m => {
                 const rev = records.filter(r => r.date.startsWith(m)).reduce((a, b) => a + b.revenue, 0);
                 const inc = rev > THRESHOLD ? (rev - THRESHOLD) * 0.5 : 0;
-                return `<div class="flex justify-between p-3 bg-slate-50 rounded-xl text-xs border border-slate-100"><span class="font-bold text-slate-600">${m}</span><span class="font-bold text-indigo-600">${Math.floor(inc).toLocaleString()}원</span></div>`;
+                return `<div class="flex justify-between p-3 bg-white border border-pink-100 shadow-sm rounded-xl text-xs"><span class="font-bold text-rose-700">${m}</span><span class="font-extrabold text-rose-500">${Math.floor(inc).toLocaleString()}원</span></div>`;
             }).join('');
 
             const filtered = records.filter(r => r.date.startsWith(curMonth));
@@ -527,34 +547,34 @@
                         borderWidth: 2, borderColor: '#fff'
                     }] 
                 }, 
-                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } }, tooltip: { callbacks: { label: (ctx) => [` 종결수: ${ctx.raw}건`, ` 매출액: ${ctx.dataset.revenue[ctx.dataIndex].toLocaleString()}원`] } } }, cutout: '65%' } 
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold', family: "'Gowun Dodum', sans-serif" } } }, tooltip: { callbacks: { label: (ctx) => [` 종결수: ${ctx.raw}건`, ` 매출액: ${ctx.dataset.revenue[ctx.dataIndex].toLocaleString()}원`] } } }, cutout: '65%' } 
             });
 
             const table = document.getElementById('categoryStatsTable');
             let tableHTML = Object.keys(CATEGORIES).map(k => {
                 const c = sums[k]; if (c === 0) return '';
-                return `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${CATEGORIES[k].color}"></div><span class="text-xs font-bold text-slate-600">${CATEGORIES[k].label}</span></div><div class="flex items-center gap-4 text-right"><div><div class="text-[9px] text-slate-400">건수</div><div class="text-xs font-bold text-slate-800">${c}건</div></div><div class="w-20"><div class="text-[9px] text-slate-400">매출</div><div class="text-xs font-bold text-slate-800">${catRev[k].toLocaleString()}원</div></div></div></div>`;
+                return `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${CATEGORIES[k].color}"></div><span class="text-xs font-bold text-rose-700">${CATEGORIES[k].label}</span></div><div class="flex items-center gap-4 text-right"><div><div class="text-[9px] text-rose-400">건수</div><div class="text-xs font-bold text-rose-900">${c}건</div></div><div class="w-20"><div class="text-[9px] text-rose-400">매출</div><div class="text-xs font-bold text-rose-900">${catRev[k].toLocaleString()}원</div></div></div></div>`;
             }).join('');
-            
+
             let totalCount = 0;
             let totalRev = 0;
             Object.keys(CATEGORIES).forEach(k => { totalCount += sums[k]; totalRev += catRev[k]; });
             
             if (totalCount > 0) {
                 tableHTML += `
-                <div class="flex items-center justify-between mt-2 pt-3 border-t border-slate-200">
+                <div class="flex items-center justify-between mt-2 pt-3 border-t border-pink-200">
                     <div class="flex items-center gap-2">
-                        <div class="w-2.5 h-2.5 rounded-full bg-slate-800"></div>
-                        <span class="text-xs font-extrabold text-slate-800">총합</span>
+                        <div class="w-2.5 h-2.5 rounded-full bg-rose-800"></div>
+                        <span class="text-xs font-extrabold text-rose-900">총합</span>
                     </div>
                     <div class="flex items-center gap-4 text-right">
                         <div>
-                            <div class="text-[9px] text-slate-500 font-bold">총 건수</div>
-                            <div class="text-xs font-extrabold text-slate-800">${totalCount}건</div>
+                            <div class="text-[9px] text-rose-500 font-bold">총 건수</div>
+                            <div class="text-xs font-extrabold text-rose-900">${totalCount}건</div>
                         </div>
                         <div class="w-20">
-                            <div class="text-[9px] text-slate-500 font-bold">총 매출</div>
-                            <div class="text-xs font-extrabold text-indigo-600">${totalRev.toLocaleString()}원</div>
+                            <div class="text-[9px] text-rose-500 font-bold">총 매출</div>
+                            <div class="text-xs font-extrabold text-rose-500">${totalRev.toLocaleString()}원</div>
                         </div>
                     </div>
                 </div>`;
@@ -565,7 +585,7 @@
             months.slice().reverse().forEach(m => monthlyTotals[m] = records.filter(r => r.date.startsWith(m)).reduce((acc, curr) => acc + curr.revenue, 0));
             const ctx1 = document.getElementById('revenueChart').getContext('2d');
             if (revenueChart) revenueChart.destroy();
-            revenueChart = new Chart(ctx1, { type: 'bar', data: { labels: Object.keys(monthlyTotals).map(m => m.split('-')[1] + '월'), datasets: [{ label: '매출', data: Object.values(monthlyTotals), backgroundColor: '#4f46e5', borderRadius: 4, barThickness: 16 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } } });
+            revenueChart = new Chart(ctx1, { type: 'bar', data: { labels: Object.keys(monthlyTotals).map(m => m.split('-')[1] + '월'), datasets: [{ label: '매출', data: Object.values(monthlyTotals), backgroundColor: '#fb7185', borderRadius: 4, barThickness: 16 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 10, family: "'Gowun Dodum', sans-serif" } } } } } });
         };
 
         window.renderDailyList = () => {
@@ -595,20 +615,7 @@
                     inc = (cumulative - Math.max(THRESHOLD, prevCumulative)) * 0.5;
                 }
                 dayIncMap[day] = (dayIncMap[day] || 0) + inc;
-                
-                // 일별 상세 리스트에는 인센티브 정보를 추가해서 생성
-                const d = document.createElement('div');
-                d.className = 'bg-white border border-slate-100 p-4 rounded-xl shadow-sm text-left mb-2';
-                const breakdown = Object.keys(r.counts).filter(k => r.counts[k] > 0).map(k => `<span class="bg-slate-50 px-2 py-0.5 rounded mr-1 text-[9px] font-bold text-slate-500 border border-slate-100">${CATEGORIES[k].label} ${r.counts[k]}</span>`).join('');
-                d.innerHTML = `
-                    <div class="flex justify-between">
-                        <div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.date}</div><div class="flex flex-wrap mt-2 gap-1">${breakdown}</div></div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
-                        <div><span class="text-[10px] text-slate-400 block font-medium">일일 합계</span><span class="text-sm font-bold text-slate-700">${r.revenue.toLocaleString()}원</span></div>
-                        ${inc > 0 ? `<div class="text-right"><span class="text-[9px] text-emerald-500 font-bold block">인센티브 발생</span><span class="text-sm font-bold text-emerald-600">+${Math.floor(inc).toLocaleString()}원</span></div>` : ''}
-                    </div>`;
-                cardElements.unshift(d);
+                cardElements.unshift(createRecordCard(r, inc));
             });
             cardElements.forEach(el => detailList.appendChild(el));
 
@@ -635,16 +642,16 @@
         window.switchView = (v) => {
             document.getElementById('view-input').classList.toggle('hidden-view', v !== 'input');
             document.getElementById('view-stats').classList.toggle('hidden-view', v !== 'stats');
-            document.getElementById('nav-input').className = `flex flex-col items-center gap-1 ${v === 'input' ? 'text-indigo-600' : 'text-slate-400'}`;
-            document.getElementById('nav-stats').className = `flex flex-col items-center gap-1 ${v === 'stats' ? 'text-indigo-600' : 'text-slate-400'}`;
+            document.getElementById('nav-input').className = `flex flex-col items-center gap-1 transition-colors ${v === 'input' ? 'text-rose-500' : 'text-stone-400'}`;
+            document.getElementById('nav-stats').className = `flex flex-col items-center gap-1 transition-colors ${v === 'stats' ? 'text-rose-500' : 'text-stone-400'}`;
             if (v === 'stats') { renderStats(); renderDailyList(); }
         };
 
         window.switchStatsTab = (t) => {
             document.getElementById('stats-monthly-content').classList.toggle('hidden-view', t !== 'monthly');
             document.getElementById('stats-daily-content').classList.toggle('hidden-view', t !== 'daily');
-            document.getElementById('tab-monthly').className = t === 'monthly' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
-            document.getElementById('tab-daily').className = t === 'daily' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+            document.getElementById('tab-monthly').className = t === 'monthly' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-stone-400 hover:text-rose-400 transition-colors';
+            document.getElementById('tab-daily').className = t === 'daily' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-stone-400 hover:text-rose-400 transition-colors';
             if (t === 'monthly') renderStats(); else renderDailyList();
         };
 
@@ -665,10 +672,10 @@
         setTodayDate();
         document.getElementById('categoryInputs').innerHTML = Object.keys(CATEGORIES).map(k => `
             <div class="space-y-1">
-                <label class="block text-[11px] font-bold text-slate-400 ml-1">
+                <label class="block text-[11px] font-bold text-rose-500 ml-1">
                     ${CATEGORIES[k].label} <span class="font-normal opacity-70">(${CATEGORIES[k].price.toLocaleString()}원)</span>
                 </label>
-                <input type="number" id="input_${k}" placeholder="0" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                <input type="number" id="input_${k}" placeholder="0" class="w-full bg-rose-50/50 border border-pink-100 p-3 rounded-xl text-sm font-bold text-rose-900 focus:ring-2 focus:ring-pink-300 focus:bg-white outline-none transition">
             </div>`).join('');
     </script>
 </body>
