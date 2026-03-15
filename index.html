@@ -195,11 +195,11 @@
         <div id="view-stats" class="hidden-view">
             <header class="mb-6"><h1 class="text-2xl font-extrabold text-rose-500 font-serif tracking-tight drop-shadow-sm">통계 및 내역</h1></header>
             <div class="flex border-b border-pink-200 mb-6 bg-white/60 backdrop-blur-sm rounded-t-xl overflow-hidden">
-                <button onclick="switchStatsTab('monthly')" id="tab-monthly" class="flex-1 py-3 text-sm font-bold tab-active">월별 통계</button>
-                <button onclick="switchStatsTab('daily')" id="tab-daily" class="flex-1 py-3 text-sm font-bold text-stone-400 hover:text-rose-400 transition-colors">일별 내역</button>
+                <button onclick="switchStatsTab('daily')" id="tab-daily" class="flex-1 py-3 text-sm font-bold tab-active">일별 내역</button>
+                <button onclick="switchStatsTab('monthly')" id="tab-monthly" class="flex-1 py-3 text-sm font-bold text-stone-400 hover:text-rose-400 transition-colors">월별 통계</button>
             </div>
             
-            <div id="stats-monthly-content" class="space-y-6">
+            <div id="stats-monthly-content" class="space-y-6 hidden-view">
                 <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50"><h2 class="text-sm font-bold text-rose-800 mb-4 text-center">월별 매출 현황</h2><div class="h-48 w-full"><canvas id="revenueChart"></canvas></div></div>
                 <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50"><h2 class="text-sm font-bold text-rose-800 mb-4">월별 정산 리포트</h2><div id="monthlyIncentiveList" class="space-y-3"></div></div>
                 <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50">
@@ -208,7 +208,7 @@
                 </div>
             </div>
 
-            <div id="stats-daily-content" class="hidden-view">
+            <div id="stats-daily-content">
                 <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-pink-100 shadow-lg shadow-pink-100/50 mb-6">
                     <div class="flex justify-between items-center mb-4"><h2 class="text-sm font-bold text-rose-800">일별 매출 달력</h2><select id="dailyMonthSelect" onchange="renderDailyList()" class="text-xs font-bold text-rose-600 bg-rose-50 border border-pink-100 px-2 py-1 rounded outline-none"></select></div>
                     <div class="calendar-grid" id="calendarGrid"></div>
